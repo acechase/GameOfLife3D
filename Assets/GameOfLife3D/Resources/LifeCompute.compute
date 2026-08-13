@@ -23,6 +23,8 @@
 #pragma kernel CSCompact
 
 #define MAX_AGE 255u
+#define AGE_MASK 255u
+#define STATE_SHIFT 8u
 #define THREADS [numthreads(4,4,4)]
 
 StructuredBuffer<uint>   _GridIn;
@@ -35,6 +37,7 @@ int _SizeZ;
 int _Wrap;          // 1 = torus wraparound, 0 = bounded (outside = dead)
 int _BirthMask;     // bits 0..26
 int _SurviveMask;   // bits 0..26
+int _States;        // 2 = plain binary; >2 adds a refractory decay shell
 
 // Seeding (region bounds as scalars — int3 uniforms via SetInts are
 // unreliable across graphics APIs)
@@ -47,6 +50,20 @@ int _SeedMaxX; int _SeedMaxY; int _SeedMaxZ;   // exclusive
 float3 _PaintCenter; // in cell space
 float  _PaintRadius; // in cells
 uint   _PaintValue;  // 1 = spawn, 0 = erase
+
+// One uint per cell, packed as (state << 8) | age.
+//   state == 0             -> empty
+//   state == _States - 1   -> ALIVE (the only cells counted as neighbors)
+//   0 < state < _States-1  -> dying/refractory, counts down one per generation
+// A corpse keeps the age it died at, so it fades at the color it reached.
+uint PackCell(uint state, uint age)
+{
+    return state == 0u ? 0u : ((state << STATE_SHIFT) | min(age, MAX_AGE));
+}
+
+uint CellState(uint v) { return v >> STATE_SHIFT; }
+uint CellAge(uint v)   { return v & AGE_MASK; }
+uint AliveState()      { return (uint)max(_States - 1, 1); }
 
 uint CellIndex(int3 c)
 {
@@ -106,21 +123,37 @@ void CSStep(uint3 id : SV_DispatchThreadID)
     int y0 = _SizeY == 1 ? 0 : -1, y1 = _SizeY == 1 ? 0 : 1;
     int z0 = _SizeZ == 1 ? 0 : -1, z1 = _SizeZ == 1 ? 0 : 1;
 
+    uint aliveState = AliveState();
     int n = 0;
     for (int dz = z0; dz <= z1; dz++)
     for (int dy = y0; dy <= y1; dy++)
     for (int dx = x0; dx <= x1; dx++)
     {
         if (dx == 0 && dy == 0 && dz == 0) continue;
-        if (SampleCell(c + int3(dx, dy, dz)) > 0u) n++;
+        // Only fully-alive cells count; refractory corpses are inert.
+        if (CellState(SampleCell(c + int3(dx, dy, dz))) == aliveState) n++;
     }
 
-    uint age = _GridIn[CellIndex(c)];
+    uint v = _GridIn[CellIndex(c)];
+    uint state = CellState(v);
+    uint age = CellAge(v);
     uint next;
-    if (age > 0u)
-        next = ((_SurviveMask >> n) & 1) != 0 ? min(age + 1u, MAX_AGE) : 0u;
+    if (state == aliveState)
+    {
+        // Failing to survive starts the decay; with _States == 2 that lands
+        // straight on 0, which is exactly the old binary behavior.
+        next = ((_SurviveMask >> n) & 1) != 0
+             ? PackCell(aliveState, min(age + 1u, MAX_AGE))
+             : PackCell(aliveState - 1u, age);
+    }
+    else if (state > 0u)
+    {
+        next = PackCell(state - 1u, age);
+    }
     else
-        next = ((_BirthMask >> n) & 1) != 0 ? 1u : 0u;
+    {
+        next = ((_BirthMask >> n) & 1) != 0 ? PackCell(aliveState, 1u) : 0u;
+    }
 
     _GridOut[CellIndex(c)] = next;
 }
@@ -136,7 +169,7 @@ void CSSeed(uint3 id : SV_DispatchThreadID)
                  && c.y >= _SeedMinY && c.y < _SeedMaxY
                  && c.z >= _SeedMinZ && c.z < _SeedMaxZ;
     bool alive = inRegion && Rand01(index, _Seed) < _Density;
-    _GridOut[index] = alive ? 1u : 0u;
+    _GridOut[index] = alive ? PackCell(AliveState(), 1u) : 0u;
 }
 
 THREADS
@@ -161,8 +194,10 @@ void CSPaint(uint3 id : SV_DispatchThreadID)
     {
         // Spawn with a touch of noise so painted blobs aren't solid bricks —
         // solid volumes tend to die instantly under most 3D rules.
+        // Painting always writes a fully-alive cell, overriding any corpse
+        // that was decaying there.
         if (Rand01(index, _Seed) < 0.6)
-            _GridOut[index] = max(_GridOut[index], 1u);
+            _GridOut[index] = PackCell(AliveState(), 1u);
     }
     else
     {
@@ -177,7 +212,9 @@ void CSCompact(uint3 id : SV_DispatchThreadID)
     if (!InGrid(c)) return;
 
     uint index = CellIndex(c);
-    uint age = _GridIn[index];
-    if (age > 0u)
-        _LiveCells.Append(uint2(index, age));
+    // Append every non-empty cell — decaying corpses included, so the shader
+    // can draw them as dim fading trails.
+    uint v = _GridIn[index];
+    if (v > 0u)
+        _LiveCells.Append(uint2(index, v));
 }

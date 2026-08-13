@@ -25,7 +25,12 @@ namespace GameOfLife3D
         public float volumeSize = 0.6f;
 
         [Header("Rules")]
-        public RulePreset rule = RulePreset.Bays4555;
+        public RulePreset rule = RulePreset.Pyroclastic;
+        [Tooltip("Cell states. 2 = plain binary. Higher gives dead cells a refractory " +
+                 "shell: they linger and fade for N-2 generations, can't be reborn while " +
+                 "they linger, and don't count as neighbors. This is what makes a 3D rule " +
+                 "sustain instead of dying out. <= 0 uses the rule's own default.")]
+        public int states = 0;
         [Tooltip("Custom birth counts, e.g. \"5\" or \"13-14\" (Custom preset only).")]
         public string customBirth = "5";
         [Tooltip("Custom survive counts, e.g. \"4,5\" or \"13-26\" (Custom preset only).")]
@@ -48,11 +53,22 @@ namespace GameOfLife3D
         public float ageMidpoint = 6f;
         [Tooltip("Idle rotation, degrees/second around Y. 0 = off.")]
         public float idleSpin = 0f;
+        [Tooltip("How brightly a just-dead cell still glows (multi-state rules only). " +
+                 "Below ~0.5 the trails drop under the bloom threshold and read as " +
+                 "dim ghosts behind the living front.")]
+        [Range(0f, 1f)] public float trailBrightness = 0.35f;
+        [Tooltip("How far a fully-faded corpse shrinks, so trails taper away.")]
+        [Range(0.1f, 1f)] public float trailScale = 0.45f;
 
         [Header("Debug")]
         public bool showStats = true;
 
         public bool Paused { get; set; }
+        /// <summary>
+        /// Cells currently drawn. Under a multi-state rule this counts fading
+        /// corpses as well as living cells, because that is exactly the set
+        /// the compact kernel appends.
+        /// </summary>
         public int Population { get; private set; }
         public string RuleName => rule == RulePreset.Custom ? $"B{customBirth}/S{customSurvive}" : rule.ToString();
 
@@ -137,6 +153,7 @@ namespace GameOfLife3D
             _cs.SetInt("_Wrap", wrapEdges ? 1 : 0);
             _cs.SetInt("_BirthMask", _birthMask);
             _cs.SetInt("_SurviveMask", _surviveMask);
+            _cs.SetInt("_States", EffectiveStates);
         }
 
         void DispatchFull(int kernel)
@@ -238,6 +255,16 @@ namespace GameOfLife3D
 
         public float CellSizeLocal => volumeSize / Mathf.Max(gridSize.x, Mathf.Max(gridSize.y, gridSize.z));
 
+        /// <summary>
+        /// State count actually in force: the inspector override when set,
+        /// otherwise the rule's measured default. Clamped to 2 (binary) at the
+        /// low end and 64 at the high end — the packed cell encoding is
+        /// (state &lt;&lt; 8) | age, so the state has plenty of headroom but the
+        /// decay shell stops being visually useful long before that.
+        /// </summary>
+        public int EffectiveStates =>
+            Mathf.Clamp(states > 0 ? states : LifeRules.DefaultStates(rule), 2, 64);
+
         // ------------------------------------------------------------------ loop
 
         void Update()
@@ -296,6 +323,9 @@ namespace GameOfLife3D
             _mpb.SetColor("_ColorMid", colorMid);
             _mpb.SetColor("_ColorOld", colorOld);
             _mpb.SetFloat("_AgeMidpoint", Mathf.Max(ageMidpoint, 1f));
+            _mpb.SetFloat("_States", EffectiveStates);
+            _mpb.SetFloat("_TrailBrightness", trailBrightness);
+            _mpb.SetFloat("_TrailScale", trailScale);
             float phase = (!Paused && stepsPerSecond > 0f) ? Mathf.Clamp01(_accum * stepsPerSecond) : 1f;
             _mpb.SetFloat("_StepPhase", phase);
 
@@ -350,7 +380,9 @@ namespace GameOfLife3D
             if (!showStats) return;
             string status = Paused ? "PAUSED" : $"{stepsPerSecond:0.#} steps/s";
             GUI.Label(new Rect(12, 12, 640, 24),
-                $"GameOfLife3D  |  {RuleName}  |  {gridSize.x}x{gridSize.y}x{gridSize.z}  |  pop {Population:n0}  |  {status}");
+                $"GameOfLife3D  |  {RuleName}  |  {gridSize.x}x{gridSize.y}x{gridSize.z}  |  " +
+                $"{(EffectiveStates > 2 ? $"{EffectiveStates} states  |  " : "")}" +
+                $"drawn {Population:n0}  |  {status}");
         }
 
         // ------------------------------------------------------------------ mesh

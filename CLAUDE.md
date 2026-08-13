@@ -65,11 +65,24 @@ unavoidable.
 
 ## Core design decisions (don't accidentally undo these)
 
-- Cell state is one uint: 0 = dead, else **age in generations** (clamped 255).
-  Age drives the color gradient. Step is a pure function of the previous grid.
+- Cell state is one uint packed as **`(state << 8) | age`**. `state == 0` is
+  empty; `state == States-1` is ALIVE; anything between is a **refractory
+  corpse** counting down one per generation. Only fully-alive cells are counted
+  as neighbors, and a corpse cannot be reborn while it lingers. Age (clamped
+  255) drives the color gradient, and a corpse keeps the age it died at so it
+  fades at the color it reached. Step is a pure function of the previous grid.
+- **`States = 2` is exactly the old binary engine** — that equivalence is
+  asserted in the reference tests, so it's the safe fallback for any new rule.
+- **Multi-state is why the 3D rules work at all.** Measured against random soup
+  in the Python reference: Bays4555 and Bays5766 go extinct at *every* density,
+  fill fraction, and edge mode; Clouds dies below 0.65 density and freezes
+  solid above it. Pyroclastic (S4-7/B6-8, 10 states) sustains indefinitely at
+  ~7% live with a Conway-like turnover ratio (~0.8 vs 2D Conway's 0.68). Don't
+  "fix" a dying rule by tuning the seed — it was tried exhaustively and the
+  refractory shell is the thing that matters.
 - Rules are 27-bit masks over live-neighbor counts (26-neighbor 3D Moore).
-  Presets: Bays4555 (default), Bays5766, Clouds (S13-26/B13-14), Conway2D,
-  Custom. A grid with an axis of size 1 degenerates exactly to 2D Moore, so
+  Presets: Pyroclastic (default, S4-7/B6-8 ×10 states), Coral (S5-8/B6-7 ×4),
+  Bays4555, Bays5766, Clouds (S13-26/B13-14), Conway2D, Custom. A grid with an axis of size 1 degenerates exactly to 2D Moore, so
   Conway2D + z=1 is the genuine 1970 game.
 - **Axes of size 1 get no neighbor offset in that axis.** Otherwise wrap mode
   folds the offset back onto the same plane and triple-counts neighbors. This
@@ -109,8 +122,9 @@ unavoidable.
 2. OpenXR + XRI + XR Device Simulator setup (README §3 has the steps).
 3. Glider/pattern injection presets (known 4555 gliders, 2D glider guns in
    Conway2D slab mode).
-4. Trail ghosts: recently-dead cells linger dim and fade (needs a second
-   "corpse age" channel or separate buffer).
+4. ~~Trail ghosts~~ — done, and for free: the refractory states ARE the
+   corpses. CSCompact appends every non-empty cell and the shader dims/shrinks
+   anything below the alive state (`trailBrightness`, `trailScale`).
 5. XR grab-and-scale tuning; two-hand scale.
 6. Quest 3 passthrough build (README §4).
 7. Stretch ideas from the original design chat: multi-species color

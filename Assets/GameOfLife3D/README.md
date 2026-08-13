@@ -76,16 +76,37 @@ where SMAA isn't supported.
 ## 2. Things to try
 
 - **Rules** (`LifeVolume → Rule`):
-  - `Bays4555` — the classic 3D Life. Amoeba-like colonies, gliders exist.
-  - `Bays5766` — blockier, crystalline, decays slowly.
-  - `Clouds` — billowing solid masses that carve caves through themselves.
-    Try grid `64³`, and stick your head inside it in XR.
+  - `Pyroclastic` — the default, and the one that actually sustains: churning
+    fronts that keep evolving indefinitely, ~7% of cells alive with fading
+    trails behind them. Converges to the same behaviour from any seed density
+    between 0.06 and 0.25, so it's hard to break.
+  - `Coral` — denser and slower, settling into a reef-like solid that keeps
+    working at its surface. Roughly 25% alive, so it reads as more of a mass.
+  - `Bays4555` — Carter Bays' classic 3D Life. Gliders exist and small
+    hand-built patterns are interesting, **but random soup always dies out**,
+    at every density and seed shape tested. Kept because the gliders are real;
+    don't expect a self-sustaining colony from a reseed.
+  - `Bays5766` — Bays' second candidate. Same caveat.
+  - `Clouds` — knife-edge: below ~0.65 density it goes extinct within a
+    hundred generations, above it freezes into a solid block. Left in for
+    rule-safari purposes rather than as a good time.
   - `Conway2D` — set **Grid Size** z = `1` (e.g. `96 × 96 × 1`) and you have
     the genuine 1970 article, floating in space. Gliders and all. The
     single-layer grid degenerates exactly to the 2D Moore neighborhood.
   - `Custom` — birth/survive count strings like `"5"` / `"4,5"` or ranges
     `"13-14"` / `"13-26"`. Rule-space safari: most rules die or explode;
     finding the living edge is the fun.
+- **States** (`LifeVolume → States`, 0 = use the rule's default) — the single
+  biggest lever on whether a 3D rule stays alive. At `2` the automaton is plain
+  binary: a cell that fails to survive vanishes. Above `2`, a dying cell leaves
+  a **refractory corpse** that fades over `States - 2` generations, can't be
+  reborn while it lingers, and isn't counted as a neighbour. That shell is what
+  stops activity from either dying out or collapsing into dense boiling — it
+  organises it into propagating fronts instead. Raise it for longer trails,
+  drop it toward 2 for a crisper, denser look.
+- **Trail Brightness / Trail Scale** — how hot and how large a corpse stays as
+  it fades. Keeping brightness under ~0.5 drops trails below the bloom
+  threshold, so the living front glows and the trails read as dim ghosts.
 - **Wrap Edges** — torus topology; gliders that leave one face re-enter the
   opposite one.
 - **Idle Spin** — a few degrees/second makes it read as a sculpture.
