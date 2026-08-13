@@ -210,6 +210,77 @@ namespace GameOfLife3D
             Recompact();
         }
 
+        /// <summary>
+        /// Clear the grid and stamp a known pattern into the middle of it,
+        /// switching to the rule the pattern is defined under and flattening
+        /// the grid to a single layer if the pattern needs one.
+        ///
+        /// Random soup is the wrong tool for seeing structure travel: the rules
+        /// that sustain a soup (Pyroclastic, Coral) have no spaceships, and the
+        /// rules that have spaceships die from soup. Placing a pattern by hand
+        /// is how you get a traveler.
+        /// </summary>
+        public void StampPattern(int index) => StampPattern(LifePatterns.Get(index));
+
+        public void StampPattern(in LifePattern pattern)
+        {
+            if (_cs == null) return;
+
+            rule = pattern.rule;
+            wrapEdges = pattern.wrap;
+
+            // A 2D pattern only behaves as designed in a single-layer grid: in
+            // a 3D grid the 26-neighbor count is a completely different rule.
+            if (pattern.flat && gridSize.z != 1)
+                Reshape(new Vector3Int(gridSize.x, gridSize.y, 1));
+            else if (!pattern.flat && gridSize.z == 1)
+                Reshape(new Vector3Int(gridSize.x, gridSize.y, gridSize.x));
+
+            ApplyRule();
+
+            Vector3Int extent = LifePatterns.Extent(pattern);
+            Vector3Int origin = (gridSize - extent) / 2;
+
+            var data = new uint[_cellCount];
+            uint alive = (uint)(EffectiveStates - 1) << 8 | 1u;   // (state << 8) | age
+            foreach (Vector3Int c in pattern.cells)
+            {
+                Vector3Int p = origin + c;
+                if (p.x < 0 || p.y < 0 || p.z < 0 ||
+                    p.x >= gridSize.x || p.y >= gridSize.y || p.z >= gridSize.z) continue;
+                data[p.x + p.y * gridSize.x + p.z * gridSize.x * gridSize.y] = alive;
+            }
+
+            Current.SetData(data);
+            _accum = 0f;
+            Recompact();
+
+            if (showStats)
+                Debug.Log($"GameOfLife3D: stamped \"{pattern.name}\" — {pattern.note}");
+        }
+
+        /// <summary>
+        /// Resize the grid at runtime. The GPU buffers are sized from gridSize
+        /// at OnEnable, so changing it needs a full reallocation rather than
+        /// just assigning the field.
+        /// </summary>
+        public void Reshape(Vector3Int newSize)
+        {
+            newSize = Vector3Int.Max(newSize, Vector3Int.one);
+            if (newSize == gridSize && _gridA != null) return;
+
+            gridSize = newSize;
+            _cellCount = gridSize.x * gridSize.y * gridSize.z;
+
+            _gridA?.Release();
+            _gridB?.Release();
+            _liveCells?.Release();
+            _gridA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, _cellCount, sizeof(uint));
+            _gridB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, _cellCount, sizeof(uint));
+            _liveCells = new GraphicsBuffer(GraphicsBuffer.Target.Append, _cellCount, sizeof(uint) * 2);
+            _aIsCurrent = true;
+        }
+
         public void ClearAll()
         {
             if (_cs == null) return;

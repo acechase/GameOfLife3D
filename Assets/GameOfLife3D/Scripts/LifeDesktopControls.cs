@@ -11,7 +11,8 @@ namespace GameOfLife3D
     ///
     ///   Space      pause / resume          N          single step
     ///   R          reseed (new random)     C          clear all cells
-    ///   T          cycle rule preset       [  /  ]    slower / faster
+    ///   T          cycle rule preset       G          cycle known patterns
+    ///   [  /  ]    slower / faster
     ///   Left-drag  paint cells             Right-drag erase cells
     ///
     /// Painting casts a ray from the active camera through the pointer and
@@ -45,6 +46,7 @@ namespace GameOfLife3D
                 if (kb.rKey.wasPressedThisFrame) volume.Reseed();
                 if (kb.cKey.wasPressedThisFrame) { volume.Paused = true; volume.ClearAll(); }
                 if (kb.tKey.wasPressedThisFrame) volume.CycleRule(+1);
+                if (kb.gKey.wasPressedThisFrame) NextPattern();
                 if (kb.leftBracketKey.wasPressedThisFrame)
                     volume.stepsPerSecond = Mathf.Max(0.5f, volume.stepsPerSecond / 1.5f);
                 if (kb.rightBracketKey.wasPressedThisFrame)
@@ -71,6 +73,7 @@ namespace GameOfLife3D
             if (Input.GetKeyDown(KeyCode.R)) volume.Reseed();
             if (Input.GetKeyDown(KeyCode.C)) { volume.Paused = true; volume.ClearAll(); }
             if (Input.GetKeyDown(KeyCode.T)) volume.CycleRule(+1);
+            if (Input.GetKeyDown(KeyCode.G)) NextPattern();
             if (Input.GetKeyDown(KeyCode.LeftBracket))
                 volume.stepsPerSecond = Mathf.Max(0.5f, volume.stepsPerSecond / 1.5f);
             if (Input.GetKeyDown(KeyCode.RightBracket))
@@ -81,6 +84,16 @@ namespace GameOfLife3D
             if (!navigating && (Input.GetMouseButton(0) || Input.GetMouseButton(1)))
                 PaintAtPointer(Input.mousePosition, Input.GetMouseButton(1));
 #endif
+        }
+
+        int _patternIndex = -1;
+
+        /// <summary>Stamp the next known pattern and let it run.</summary>
+        void NextPattern()
+        {
+            _patternIndex++;
+            volume.StampPattern(_patternIndex);
+            volume.Paused = false;   // the whole point is watching it travel
         }
 
         void PaintAtPointer(Vector2 screenPos, bool erase)

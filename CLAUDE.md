@@ -36,9 +36,14 @@ unavoidable.
   draws with one `Graphics.RenderMeshIndirect`. Public API: Paused, StepOnce,
   Reseed, ClearAll, PaintSphere, CycleRule, FitBoxCollider (context menu, for
   XRGrabInteractable).
-- `Scripts/LifeRules.cs` — rule presets + "B/S count string" parsing.
-- `Scripts/LifeDesktopControls.cs` — keyboard/mouse (Space/N/R/C/T, brackets
-  for speed, LMB paint / RMB erase; skips painting while Alt held).
+- `Scripts/LifeRules.cs` — rule presets, per-rule state counts and measured
+  seed densities, + "B/S count string" parsing.
+- `Scripts/LifePatterns.cs` — known-good starting configurations (Gosper gun,
+  Conway glider/LWSS, the Bays5766 3D spaceship), each verified against the
+  Python reference rather than copied from memory.
+- `Scripts/LifeDesktopControls.cs` — keyboard/mouse (Space/N/R/C/T, G to stamp
+  the next pattern, brackets for speed, LMB paint / RMB erase; skips painting
+  while Alt or Shift is held, since those belong to LifeOrbitCamera).
 - `Scripts/LifeOrbitCamera.cs` — Game-view orbit/pan/zoom (Alt+left-drag orbit,
   Shift+left-drag or middle-drag pan, Alt+right-drag dolly, scroll, F to frame).
   Goes on the camera; finds the LifeVolume itself and frames it on Play. Drives
@@ -120,8 +125,13 @@ unavoidable.
    generic. Remaining polish: retune per-rule (Clouds is much denser than
    Bays4555, so it blooms hotter).
 2. OpenXR + XRI + XR Device Simulator setup (README §3 has the steps).
-3. Glider/pattern injection presets (known 4555 gliders, 2D glider guns in
-   Conway2D slab mode).
+3. ~~Glider/pattern injection~~ — done. `LifePatterns.cs` + `LifeVolume.
+   StampPattern` + `G` key. Each pattern carries the rule, edge mode and grid
+   shape it needs, and `Reshape()` reallocates buffers so flat patterns work.
+   Note: a 3520-trial search found NO spaceships under Pyroclastic or Coral
+   (turbulent rules don't have them) and none under Bays4555 either; the one
+   3D traveler we ship is a Bays5766 period-4 10-cell glider found by that
+   search. Any new pattern must be verified in Validation~ before shipping.
 4. ~~Trail ghosts~~ — done, and for free: the refractory states ARE the
    corpses. CSCompact appends every non-empty cell and the shader dims/shrinks
    anything below the alive state (`trailBrightness`, `trailScale`).

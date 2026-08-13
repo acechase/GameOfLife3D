@@ -24,7 +24,8 @@ Works in any Unity 6 URP project. Do this first to see it run; add XR after.
    and frames it on Play).
 6. Press **Play**.
 
-You should see a glowing cyan colony evolving under the Bays 4555 rule.
+You should see a glowing colony churning away under the Pyroclastic rule.
+Press `G` to swap it for a glider gun or a 3D spaceship.
 
 **Desktop controls**
 
@@ -35,6 +36,7 @@ You should see a glowing cyan colony evolving under the Bays 4555 rule.
 | `R` | reseed with a new random soup |
 | `C` | clear all cells |
 | `T` | cycle rule preset |
+| `G` | stamp the next known pattern (glider gun, spaceships) |
 | `[` / `]` | slower / faster |
 | Left-drag | paint cells where the pointer ray enters the volume |
 | Right-drag | erase |
@@ -96,6 +98,20 @@ where SMAA isn't supported.
   - `Custom` — birth/survive count strings like `"5"` / `"4,5"` or ranges
     `"13-14"` / `"13-26"`. Rule-space safari: most rules die or explode;
     finding the living edge is the fun.
+- **Patterns** (`G`) — cycles through known configurations, each one clearing
+  the grid and switching to the rule, edge mode and grid shape it needs. This
+  is the only way to see structures *travel*, and the reason why is worth
+  knowing: a search over 3520 random starting blobs found **no spaceships at
+  all** under Pyroclastic or Coral. Rules that sustain a random soup are
+  turbulent; rules with spaceships (Bays) die from soup. So travelers have to
+  be placed, not grown.
+  - `3D Spaceship (Bays 5766)` — 10 cells, period 4, drifting diagonally
+    through the volume forever on a torus. A genuine 3D glider, found by
+    search and verified over six full periods.
+  - `Gosper Glider Gun` — flattens to a slab and fires a glider every 30
+    generations, indefinitely. The clearest "things are being built and
+    launched" pattern there is.
+  - `Glider` / `Lightweight Spaceship` — the 2D classics, in slab mode.
 - **States** (`LifeVolume → States`, 0 = use the rule's default) — the single
   biggest lever on whether a 3D rule stays alive. At `2` the automaton is plain
   binary: a cell that fails to survive vanishes. Above `2`, a dying cell leaves
@@ -176,6 +192,7 @@ GameOfLife3D/
 │   ├── LifeRules.cs           # rule presets & B/S mask parsing
 │   ├── LifeDesktopControls.cs # mouse/keyboard for desktop & simulator
 │   ├── LifeGlow.cs            # self-building bloom/grade volume + camera setup
+│   ├── LifePatterns.cs        # verified gliders / guns / 3D spaceship
 │   ├── LifeOrbitCamera.cs     # Game-view orbit / pan / zoom / frame
 │   └── LifeXRWand.cs          # controller painting / pause / reseed
 └── Resources/
