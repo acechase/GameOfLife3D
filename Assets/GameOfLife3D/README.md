@@ -19,7 +19,7 @@ Works in any Unity 6 URP project. Do this first to see it run; add XR after.
 2. Drop the `GameOfLife3D` folder anywhere under `Assets/`.
 3. In an empty scene: **GameObject → Create Empty**, name it `Life Volume`,
    position it at `(0, 1.2, 0.8)` so it hangs in front of the default camera.
-4. Add components: **LifeVolume** and **LifeDesktopControls**.
+4. Add components: **LifeVolume**, **LifeDesktopControls**, and **LifeGlow**.
 5. Press **Play**.
 
 You should see a glowing cyan colony evolving under the Bays 4555 rule.
@@ -37,16 +37,25 @@ You should see a glowing cyan colony evolving under the Bays 4555 rule.
 | Left-drag | paint cells where the pointer ray enters the volume |
 | Right-drag | erase |
 
-**Make it glow (recommended):** the cell colors are HDR, so bloom does the
-aesthetic heavy lifting.
+**Make it glow:** the cell colors are HDR (young cyan peaks near `4.0`), so
+bloom does the aesthetic heavy lifting. **LifeGlow** handles all of it — no
+profile assets, no Global Volume, no camera checkboxes:
 
-1. Select your camera → enable **Post Processing** (Rendering section). Ensure
-   the camera (or the URP asset) has **HDR** on.
-2. **GameObject → Volume → Global Volume** → create a new profile →
-   **Add Override → Post-processing → Bloom**. Set Intensity ≈ `0.8`,
-   Threshold ≈ `0.9`, Scatter ≈ `0.6`.
-3. A dark scene sells it: set the camera **Background Type** to Solid Color,
-   near-black (e.g. `#05070C`).
+- It builds its own global Volume in code at priority `100`, overriding
+  whatever profile the scene already carries (the URP template ships one tuned
+  for a generic sample scene: bloom intensity `0.25`, too timid for this).
+- At play time it forces the main camera to HDR + post-processing, turns on
+  SMAA and dithering, and clears to near-black so the glow reads.
+- The volume object and profile are `HideAndDontSave`: nothing appears in the
+  Hierarchy and the scene never gets dirtied.
+
+Tune it live in the inspector while playing — **Intensity** is the main
+bioluminescence dial, **Threshold** decides how dim a cell still glows, and
+**Scatter** trades a tight halo for volumetric haze.
+
+Two flags matter later: turn **Dark Background** *off* for passthrough AR (it
+would paint over the real world) and switch **Antialiasing** to `FXAA` in XR,
+where SMAA isn't supported.
 
 ## 2. Things to try
 
@@ -129,6 +138,7 @@ GameOfLife3D/
 │   ├── LifeVolume.cs          # the whole sim+render orchestrator (one component)
 │   ├── LifeRules.cs           # rule presets & B/S mask parsing
 │   ├── LifeDesktopControls.cs # mouse/keyboard for desktop & simulator
+│   ├── LifeGlow.cs            # self-building bloom/grade volume + camera setup
 │   └── LifeXRWand.cs          # controller painting / pause / reseed
 └── Resources/
     ├── LifeCompute.compute    # seed / step / paint / compact kernels

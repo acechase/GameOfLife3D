@@ -39,7 +39,13 @@ unavoidable.
 - `Scripts/LifeRules.cs` — rule presets + "B/S count string" parsing.
 - `Scripts/LifeDesktopControls.cs` — keyboard/mouse (Space/N/R/C/T, brackets
   for speed, LMB paint / RMB erase; skips painting while Alt held).
-- `Scripts/LifeOrbitCamera.cs` — Game-view orbit/zoom (Alt+drag, scroll, F).
+- `Scripts/LifeGlow.cs` — post-processing, zero wiring. Builds its own global
+  Volume + VolumeProfile in code (priority 100, `HideAndDontSave` so it never
+  dirties the scene) with Bloom/Tonemapping/ColorAdjustments/Vignette, and at
+  play time forces the main camera to HDR + post-processing + SMAA + dithering
+  + near-black clear. `[ExecuteAlways]`, live-tunable via `OnValidate`.
+  For passthrough AR: turn `darkBackground` off and use FXAA (SMAA is
+  unsupported in XR).
 - `Scripts/LifeXRWand.cs` — controller painting via Input System actions
   (`#if ENABLE_INPUT_SYSTEM`), context menu for default XR bindings.
 - `Validation~/reference_life.py` — headless Python mirror of the step rule.
@@ -86,7 +92,10 @@ unavoidable.
 
 ## Roadmap (discussed, in rough priority order)
 
-1. Bloom/post-processing polish (Global Volume, HDR camera) — may still be unset.
+1. ~~Bloom/post-processing polish~~ — done via `LifeGlow`. The URP template
+   already had HDR + post-processing + a Global Volume on; only the tuning was
+   generic. Remaining polish: retune per-rule (Clouds is much denser than
+   Bays4555, so it blooms hotter).
 2. OpenXR + XRI + XR Device Simulator setup (README §3 has the steps).
 3. Glider/pattern injection presets (known 4555 gliders, 2D glider guns in
    Conway2D slab mode).
