@@ -20,7 +20,9 @@ Works in any Unity 6 URP project. Do this first to see it run; add XR after.
 3. In an empty scene: **GameObject → Create Empty**, name it `Life Volume`,
    position it at `(0, 1.2, 0.8)` so it hangs in front of the default camera.
 4. Add components: **LifeVolume**, **LifeDesktopControls**, and **LifeGlow**.
-5. Press **Play**.
+5. Select your **Main Camera** → add **LifeOrbitCamera** (it finds the volume
+   and frames it on Play).
+6. Press **Play**.
 
 You should see a glowing cyan colony evolving under the Bays 4555 rule.
 
@@ -36,6 +38,15 @@ You should see a glowing cyan colony evolving under the Bays 4555 rule.
 | `[` / `]` | slower / faster |
 | Left-drag | paint cells where the pointer ray enters the volume |
 | Right-drag | erase |
+| `Alt` + left-drag | orbit the camera |
+| `Alt` + right-drag | dolly in / out |
+| Middle-drag | pan |
+| Scroll | zoom |
+| `F` | frame the volume |
+
+Navigation lives on **LifeOrbitCamera** (add it to your camera). Holding `Alt`
+suppresses painting, so orbiting never smears cells across the grid — the same
+split the Scene view uses.
 
 **Make it glow:** the cell colors are HDR (young cyan peaks near `4.0`), so
 bloom does the aesthetic heavy lifting. **LifeGlow** handles all of it — no
@@ -139,6 +150,7 @@ GameOfLife3D/
 │   ├── LifeRules.cs           # rule presets & B/S mask parsing
 │   ├── LifeDesktopControls.cs # mouse/keyboard for desktop & simulator
 │   ├── LifeGlow.cs            # self-building bloom/grade volume + camera setup
+│   ├── LifeOrbitCamera.cs     # Game-view orbit / pan / zoom / frame
 │   └── LifeXRWand.cs          # controller painting / pause / reseed
 └── Resources/
     ├── LifeCompute.compute    # seed / step / paint / compact kernels

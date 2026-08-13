@@ -15,7 +15,8 @@ namespace GameOfLife3D
     ///   Left-drag  paint cells             Right-drag erase cells
     ///
     /// Painting casts a ray from the active camera through the pointer and
-    /// paints where the ray enters the volume.
+    /// paints where the ray enters the volume. Holding Alt suppresses painting
+    /// entirely, leaving those drags to <see cref="LifeOrbitCamera"/>.
     /// </summary>
     public class LifeDesktopControls : MonoBehaviour
     {
@@ -50,8 +51,12 @@ namespace GameOfLife3D
                     volume.stepsPerSecond = Mathf.Min(60f, volume.stepsPerSecond * 1.5f);
             }
 
+            // Alt-drags belong to LifeOrbitCamera; painting sits this one out
+            // or every attempt to look around would smear cells across the grid.
+            bool alt = kb != null && (kb.leftAltKey.isPressed || kb.rightAltKey.isPressed);
+
             var mouse = Mouse.current;
-            if (mouse != null)
+            if (mouse != null && !alt)
             {
                 bool paint = mouse.leftButton.isPressed;
                 bool erase = mouse.rightButton.isPressed;
@@ -69,7 +74,8 @@ namespace GameOfLife3D
             if (Input.GetKeyDown(KeyCode.RightBracket))
                 volume.stepsPerSecond = Mathf.Min(60f, volume.stepsPerSecond * 1.5f);
 
-            if (Input.GetMouseButton(0) || Input.GetMouseButton(1))
+            bool alt = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+            if (!alt && (Input.GetMouseButton(0) || Input.GetMouseButton(1)))
                 PaintAtPointer(Input.mousePosition, Input.GetMouseButton(1));
 #endif
         }
