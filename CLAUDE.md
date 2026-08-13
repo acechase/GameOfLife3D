@@ -40,11 +40,15 @@ unavoidable.
 - `Scripts/LifeDesktopControls.cs` — keyboard/mouse (Space/N/R/C/T, brackets
   for speed, LMB paint / RMB erase; skips painting while Alt held).
 - `Scripts/LifeOrbitCamera.cs` — Game-view orbit/pan/zoom (Alt+left-drag orbit,
-  Alt+right-drag dolly, middle-drag pan, scroll, F to frame). Goes on the
-  camera; finds the LifeVolume itself and frames it on Play. Drives pivot +
-  spherical offset (no accumulated roll); pan is stored as an offset *from the
-  target* so the view keeps tracking a volume that moves. `LifeDesktopControls`
-  suppresses painting while Alt is held so the two never fight.
+  Shift+left-drag or middle-drag pan, Alt+right-drag dolly, scroll, F to frame).
+  Goes on the camera; finds the LifeVolume itself and frames it on Play. Drives
+  pivot + spherical offset (no accumulated roll); pan is stored as an offset
+  *from the target* so the view keeps tracking a volume that moves.
+  `LifeDesktopControls` suppresses painting while Alt **or Shift** is held so
+  the two never fight — keep those two guards in sync when adding a binding.
+- **Andrew is on a trackpad**: every navigation binding must be reachable
+  without a middle mouse button or a wheel. Modifier+drag and two-finger
+  scroll only; scroll input is normalized for wheel (~120/notch) vs trackpad.
 - `Scripts/LifeGlow.cs` — post-processing, zero wiring. Builds its own global
   Volume + VolumeProfile in code (priority 100, `HideAndDontSave` so it never
   dirties the scene) with Bloom/Tonemapping/ColorAdjustments/Vignette, and at

@@ -39,14 +39,19 @@ You should see a glowing cyan colony evolving under the Bays 4555 rule.
 | Left-drag | paint cells where the pointer ray enters the volume |
 | Right-drag | erase |
 | `Alt` + left-drag | orbit the camera |
+| `Shift` + left-drag | pan |
+| Middle-drag | pan (mouse alternative) |
 | `Alt` + right-drag | dolly in / out |
-| Middle-drag | pan |
-| Scroll | zoom |
+| Two-finger / wheel scroll | zoom |
 | `F` | frame the volume |
 
 Navigation lives on **LifeOrbitCamera** (add it to your camera). Holding `Alt`
-suppresses painting, so orbiting never smears cells across the grid — the same
-split the Scene view uses.
+or `Shift` suppresses painting, so navigating never smears cells across the
+grid — the same modifier split the Scene view uses.
+
+All of it is trackpad-reachable: pan and orbit are modifier + drag, and zoom is
+a two-finger scroll (wheel notches and trackpad deltas are normalized to feel
+about the same). Middle-drag is there for three-button mice only.
 
 **Make it glow:** the cell colors are HDR (young cyan peaks near `4.0`), so
 bloom does the aesthetic heavy lifting. **LifeGlow** handles all of it — no

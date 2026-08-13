@@ -11,8 +11,11 @@ namespace GameOfLife3D
     /// LifeVolume by itself.
     ///
     ///   Alt + left-drag    orbit          Alt + right-drag  dolly (zoom)
-    ///   Middle-drag        pan            Scroll wheel      zoom
-    ///   F                  frame the volume
+    ///   Shift + left-drag  pan            Two-finger / wheel scroll  zoom
+    ///   Middle-drag        pan            F                 frame the volume
+    ///
+    /// Shift-drag and middle-drag both pan: trackpads have no middle button, so
+    /// the modifier is the one that actually works on a laptop.
     ///
     /// Alt-modified drags mirror the Scene view's navigation, and they keep the
     /// bare mouse buttons free for painting — <see cref="LifeDesktopControls"/>
@@ -109,7 +112,7 @@ namespace GameOfLife3D
         {
             Vector2 delta;
             float scroll;
-            bool alt, leftHeld, rightHeld, middleHeld, framePressed;
+            bool alt, shift, leftHeld, rightHeld, middleHeld, framePressed;
 
 #if ENABLE_INPUT_SYSTEM
             Mouse mouse = Mouse.current;
@@ -122,6 +125,7 @@ namespace GameOfLife3D
             rightHeld = mouse.rightButton.isPressed;
             middleHeld = mouse.middleButton.isPressed;
             alt = kb != null && (kb.leftAltKey.isPressed || kb.rightAltKey.isPressed);
+            shift = kb != null && (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed);
             framePressed = kb != null && kb.fKey.wasPressedThisFrame;
 #else
             delta = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y")) * 10f;
@@ -130,6 +134,7 @@ namespace GameOfLife3D
             rightHeld = Input.GetMouseButton(1);
             middleHeld = Input.GetMouseButton(2);
             alt = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+            shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
             framePressed = Input.GetKeyDown(KeyCode.F);
 #endif
 
@@ -145,7 +150,7 @@ namespace GameOfLife3D
                 // Horizontal drag dollies, matching the Scene view.
                 _wantDistance = ClampDistance(_wantDistance * Mathf.Exp(-delta.x * zoomSpeed * 0.02f));
             }
-            else if (middleHeld)
+            else if (middleHeld || (shift && leftHeld))
             {
                 // Pan in the view plane, scaled by distance so the volume keeps
                 // pace with the cursor at any zoom level.
