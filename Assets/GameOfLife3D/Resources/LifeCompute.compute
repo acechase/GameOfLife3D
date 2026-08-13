@@ -1,0 +1,183 @@
+// ---------------------------------------------------------------------------
+// GameOfLife3D — GPU simulation core
+//
+// A 3D cellular automaton over a grid of uint "age" cells:
+//   0 = dead, >=1 = alive (value is age in generations, clamped to MAX_AGE).
+//
+// Rules are bitmasks over live-neighbor counts (26-neighbor / 3D Moore):
+//   bit n of _BirthMask   set -> a dead cell with n live neighbors is born
+//   bit n of _SurviveMask set -> a live cell with n live neighbors survives
+//
+// A grid with _SizeZ == 1 degenerates to the classic 2D Moore neighborhood
+// (axes of size 1 get no neighbor offset — see note in CSStep), so
+// B3/S23 reproduces Conway's original Game of Life exactly.
+//
+// This logic is mirrored 1:1 by the validated Python reference
+// (validate/reference_life.py in the design workspace).
+// ---------------------------------------------------------------------------
+
+#pragma kernel CSStep
+#pragma kernel CSSeed
+#pragma kernel CSClear
+#pragma kernel CSPaint
+#pragma kernel CSCompact
+
+#define MAX_AGE 255u
+#define THREADS [numthreads(4,4,4)]
+
+StructuredBuffer<uint>   _GridIn;
+RWStructuredBuffer<uint> _GridOut;
+AppendStructuredBuffer<uint2> _LiveCells; // (cellIndex, age)
+
+int _SizeX;
+int _SizeY;
+int _SizeZ;
+int _Wrap;          // 1 = torus wraparound, 0 = bounded (outside = dead)
+int _BirthMask;     // bits 0..26
+int _SurviveMask;   // bits 0..26
+
+// Seeding (region bounds as scalars — int3 uniforms via SetInts are
+// unreliable across graphics APIs)
+uint  _Seed;
+float _Density;
+int _SeedMinX; int _SeedMinY; int _SeedMinZ;   // inclusive
+int _SeedMaxX; int _SeedMaxY; int _SeedMaxZ;   // exclusive
+
+// Painting
+float3 _PaintCenter; // in cell space
+float  _PaintRadius; // in cells
+uint   _PaintValue;  // 1 = spawn, 0 = erase
+
+uint CellIndex(int3 c)
+{
+    return (uint)(c.x + c.y * _SizeX + c.z * _SizeX * _SizeY);
+}
+
+bool InGrid(int3 c)
+{
+    return all(c >= 0) && c.x < _SizeX && c.y < _SizeY && c.z < _SizeZ;
+}
+
+// Sample a cell with wrap/bounded edge handling. Out of bounds = dead.
+// (Single-assignment form; early returns here trip a "potentially
+// uninitialized variable" warning in the Metal cross-compiler.)
+uint SampleCell(int3 c)
+{
+    uint result = 0u;
+    if (_Wrap != 0)
+    {
+        // Neighbor offsets are -1..+1, so c + size is always >= 0 here;
+        // unsigned modulus avoids Metal's slow-integer-modulus path.
+        c.x = (int)((uint)(c.x + _SizeX) % (uint)_SizeX);
+        c.y = (int)((uint)(c.y + _SizeY) % (uint)_SizeY);
+        c.z = (int)((uint)(c.z + _SizeZ) % (uint)_SizeZ);
+        result = _GridIn[CellIndex(c)];
+    }
+    else if (InGrid(c))
+    {
+        result = _GridIn[CellIndex(c)];
+    }
+    return result;
+}
+
+// PCG hash — cheap, good-quality per-cell randomness.
+uint Hash(uint v)
+{
+    uint state = v * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
+float Rand01(uint index, uint seed)
+{
+    return Hash(index ^ Hash(seed)) / 4294967295.0;
+}
+
+THREADS
+void CSStep(uint3 id : SV_DispatchThreadID)
+{
+    int3 c = int3(id);
+    if (!InGrid(c)) return;
+
+    // Axes of size 1 get no neighbor offset in that axis; otherwise a wrapped
+    // offset lands back on the same plane and triple-counts neighbors.
+    // (Mirrors the validated reference implementation.)
+    int x0 = _SizeX == 1 ? 0 : -1, x1 = _SizeX == 1 ? 0 : 1;
+    int y0 = _SizeY == 1 ? 0 : -1, y1 = _SizeY == 1 ? 0 : 1;
+    int z0 = _SizeZ == 1 ? 0 : -1, z1 = _SizeZ == 1 ? 0 : 1;
+
+    int n = 0;
+    for (int dz = z0; dz <= z1; dz++)
+    for (int dy = y0; dy <= y1; dy++)
+    for (int dx = x0; dx <= x1; dx++)
+    {
+        if (dx == 0 && dy == 0 && dz == 0) continue;
+        if (SampleCell(c + int3(dx, dy, dz)) > 0u) n++;
+    }
+
+    uint age = _GridIn[CellIndex(c)];
+    uint next;
+    if (age > 0u)
+        next = ((_SurviveMask >> n) & 1) != 0 ? min(age + 1u, MAX_AGE) : 0u;
+    else
+        next = ((_BirthMask >> n) & 1) != 0 ? 1u : 0u;
+
+    _GridOut[CellIndex(c)] = next;
+}
+
+THREADS
+void CSSeed(uint3 id : SV_DispatchThreadID)
+{
+    int3 c = int3(id);
+    if (!InGrid(c)) return;
+
+    uint index = CellIndex(c);
+    bool inRegion = c.x >= _SeedMinX && c.x < _SeedMaxX
+                 && c.y >= _SeedMinY && c.y < _SeedMaxY
+                 && c.z >= _SeedMinZ && c.z < _SeedMaxZ;
+    bool alive = inRegion && Rand01(index, _Seed) < _Density;
+    _GridOut[index] = alive ? 1u : 0u;
+}
+
+THREADS
+void CSClear(uint3 id : SV_DispatchThreadID)
+{
+    int3 c = int3(id);
+    if (!InGrid(c)) return;
+    _GridOut[CellIndex(c)] = 0u;
+}
+
+THREADS
+void CSPaint(uint3 id : SV_DispatchThreadID)
+{
+    int3 c = int3(id);
+    if (!InGrid(c)) return;
+
+    float3 p = float3(c) + 0.5;
+    if (distance(p, _PaintCenter) > _PaintRadius) return;
+
+    uint index = CellIndex(c);
+    if (_PaintValue > 0u)
+    {
+        // Spawn with a touch of noise so painted blobs aren't solid bricks —
+        // solid volumes tend to die instantly under most 3D rules.
+        if (Rand01(index, _Seed) < 0.6)
+            _GridOut[index] = max(_GridOut[index], 1u);
+    }
+    else
+    {
+        _GridOut[index] = 0u;
+    }
+}
+
+THREADS
+void CSCompact(uint3 id : SV_DispatchThreadID)
+{
+    int3 c = int3(id);
+    if (!InGrid(c)) return;
+
+    uint index = CellIndex(c);
+    uint age = _GridIn[index];
+    if (age > 0u)
+        _LiveCells.Append(uint2(index, age));
+}
