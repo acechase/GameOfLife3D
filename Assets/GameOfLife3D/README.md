@@ -44,8 +44,6 @@ Press `G` to swap it for a glider gun or a 3D spaceship.
 | `F` | frame the volume |
 | `Cmd`/`Ctrl` + left-drag | paint cells into the volume |
 | `Cmd`/`Ctrl` + right-drag | erase cells |
-| `Alt` + left-drag | orbit (Scene-view alias) |
-| `Alt` + right-drag | dolly in / out |
 | Middle-drag | pan (three-button-mouse alias) |
 
 **The mouse navigates by default.** Bare drags move the camera; editing cells
@@ -53,10 +51,14 @@ is the deliberate act and needs `Cmd` (or `Ctrl`) held. While that modifier is
 down the camera ignores the mouse completely, so a paint stroke never drags the
 view along with it.
 
-Everything primary is trackpad-reachable: pan and orbit are plain drags, zoom
-is a two-finger scroll (wheel notches and trackpad deltas are normalized to
-feel about the same). The `Alt` and middle-drag bindings are aliases for people
-with a three-button mouse and Unity muscle memory — you never need them.
+Everything is trackpad-reachable: pan and orbit are plain drags, zoom is a
+two-finger scroll (wheel notches and trackpad deltas are normalized to feel
+about the same). Middle-drag is an alias for three-button mice.
+
+A drag's meaning is fixed when the button goes down and held until release, so
+a modifier pressed mid-stroke can't flip you between pan and orbit halfway
+through — that flipping is what made the old `Alt` bindings feel glitchy and
+unresponsive, since the two moves partly cancel.
 
 **About painting:** it spawns a noisy sphere of live cells where your cursor
 ray enters the volume — the desktop stand-in for reaching in with your hand in

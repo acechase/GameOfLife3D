@@ -12,18 +12,17 @@ namespace GameOfLife3D
     ///
     ///   Left-drag          PAN            Right-drag        ORBIT
     ///   Two-finger scroll  zoom           F                 frame the volume
-    ///   Alt + left-drag    orbit          Alt + right-drag  dolly (zoom)
-    ///   Shift/middle-drag  pan
+    ///   Middle-drag        pan (three-button-mouse alias)
     ///
-    /// The bare mouse buttons navigate: that is the mouse's primary job here.
-    /// Editing cells is the deliberate act, and lives behind
-    /// <see cref="LifeInput.PaintModifier"/> (Cmd / Ctrl) — while that is held
-    /// this component ignores the mouse entirely, so a paint stroke never drags
-    /// the camera with it.
+    /// Four bindings, no modifiers. Editing cells is the deliberate act and
+    /// lives behind <see cref="LifeInput.PaintModifier"/> (Cmd / Ctrl); a drag
+    /// started with that held belongs to the brush and this component leaves it
+    /// alone for its whole duration.
     ///
-    /// The Alt aliases are kept because they match Unity's own Scene view, and
-    /// middle-drag because a three-button mouse expects it — but neither is
-    /// required, since a trackpad has neither a middle button nor a wheel.
+    /// A drag's meaning is latched when the button goes down and held until it
+    /// is released. Deciding per frame let a modifier arriving a frame late flip
+    /// pan and orbit mid-stroke, which cancel each other and feel like a dead,
+    /// glitchy zone rather than a camera move.
     ///
     /// Alt-modified drags mirror the Scene view's navigation, and they keep the
     /// bare mouse buttons free for painting — <see cref="LifeDesktopControls"/>
@@ -66,6 +65,10 @@ namespace GameOfLife3D
         [Header("Angles")]
         public float initialYaw = 30f;
         public float initialPitch = 20f;
+
+        /// <summary>What a drag is doing, latched when the button goes down.</summary>
+        enum DragMode { None, Pan, Orbit, Brush }
+        DragMode _drag = DragMode.None;
 
         Camera _cam;
         LifeVolume _volume;
@@ -144,29 +147,27 @@ namespace GameOfLife3D
 
             if (framePressed) { Frame(); return; }
 
-            bool alt = LifeInput.Alt;
+            // The mode is decided once, when the button goes down, and held for
+            // the whole drag. Deciding it per frame meant a modifier registering
+            // a frame late — or flickering mid-drag — silently swapped pan and
+            // orbit, which partly cancel and feel like a glitchy dead zone.
+            bool anyButton = leftHeld || rightHeld || middleHeld;
+            if (!anyButton)
+            {
+                _drag = DragMode.None;
+            }
+            else if (_drag == DragMode.None)
+            {
+                if (LifeInput.PaintModifier)
+                    _drag = DragMode.Brush;         // belongs to the brush, not us
+                else if (leftHeld || middleHeld)
+                    _drag = DragMode.Pan;
+                else
+                    _drag = DragMode.Orbit;
+            }
 
-            // Cmd/Ctrl means the drag belongs to the brush — hands off the camera.
-            if (LifeInput.PaintModifier)
-                leftHeld = rightHeld = middleHeld = false;
-
-            if (alt && leftHeld)
-            {
-                Orbit(delta);                       // Scene-view alias
-            }
-            else if (alt && rightHeld)
-            {
-                // Horizontal drag dollies, matching the Scene view.
-                _wantDistance = ClampDistance(_wantDistance * Mathf.Exp(-delta.x * zoomSpeed * 0.02f));
-            }
-            else if (leftHeld || middleHeld)
-            {
-                Pan(delta);                         // the primary: plain click-drag
-            }
-            else if (rightHeld)
-            {
-                Orbit(delta);                       // the primary: plain right-drag
-            }
+            if (_drag == DragMode.Pan) Pan(delta);
+            else if (_drag == DragMode.Orbit) Orbit(delta);
 
             if (Mathf.Abs(scroll) > 0.01f)
             {

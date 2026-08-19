@@ -47,8 +47,11 @@ unavoidable.
   shared by the camera and the brush. It exists because those two components
   each tested the keys themselves and the definitions drifted, which let a drag
   paint and navigate at once. Add a modifier here, not in a component.
-- `Scripts/LifeOrbitCamera.cs` — Game-view orbit/pan/zoom (Alt+left-drag orbit,
-  Shift+left-drag or middle-drag pan, Alt+right-drag dolly, scroll, F to frame).
+- `Scripts/LifeOrbitCamera.cs` — Game-view navigation: left-drag pan,
+  right-drag orbit, scroll zoom, F to frame (middle-drag pans as a mouse
+  alias). Drag mode is **latched at button-down**; evaluating it per frame let
+  a late modifier flip pan/orbit mid-stroke, which cancel and feel like a dead
+  zone. Don't reintroduce per-frame mode decisions.
   Goes on the camera; finds the LifeVolume itself and frames it on Play. Drives
   pivot + spherical offset (no accumulated roll); pan is stored as an offset
   *from the target* so the view keeps tracking a volume that moves.

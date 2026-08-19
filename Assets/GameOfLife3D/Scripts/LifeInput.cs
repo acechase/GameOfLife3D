@@ -11,32 +11,13 @@ namespace GameOfLife3D
     /// This exists because the camera and the brush have to agree on who owns a
     /// drag, and when each component tested the keys itself the two definitions
     /// drifted apart — a modifier added to one kept painting and navigating at
-    /// the same time. One definition, both callers.
+    /// the same time. One definition, both callers: add modifiers here.
     /// </summary>
     public static class LifeInput
     {
 #if ENABLE_INPUT_SYSTEM
         static Keyboard Kb => Keyboard.current;
 #endif
-
-        /// <summary>Alt / Option.</summary>
-        public static bool Alt
-        {
-#if ENABLE_INPUT_SYSTEM
-            get { var k = Kb; return k != null && (k.leftAltKey.isPressed || k.rightAltKey.isPressed); }
-#else
-            get { return Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt); }
-#endif
-        }
-
-        public static bool Shift
-        {
-#if ENABLE_INPUT_SYSTEM
-            get { var k = Kb; return k != null && (k.leftShiftKey.isPressed || k.rightShiftKey.isPressed); }
-#else
-            get { return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift); }
-#endif
-        }
 
         /// <summary>
         /// The "I mean to edit cells, not move the camera" modifier: Command on
