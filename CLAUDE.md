@@ -58,9 +58,14 @@ unavoidable.
   **Bare left-drag pans and bare right-drag orbits — the mouse's primary job is
   navigation.** Painting is behind Cmd/Ctrl, and the camera ignores the mouse
   entirely while that is held, so the two can't fight.
-- **Andrew is on a trackpad**: every navigation binding must be reachable
-  without a middle mouse button or a wheel. Modifier+drag and two-finger
-  scroll only; scroll input is normalized for wheel (~120/notch) vs trackpad.
+- **Andrew is on a macOS trackpad**, which constrains bindings hard:
+  no middle button, no wheel, and **no right-DRAG** (two-finger click is a
+  right-click, but two fingers held and moved is the scroll gesture). So orbit
+  lives on Shift+left-drag; right/middle-drag are mouse-only aliases. Scroll is
+  normalized for wheel (~120/notch) vs trackpad deltas.
+- **Ctrl is not a usable modifier on macOS**: Ctrl+click is an OS-level
+  right-click, so a "Ctrl+drag" binding arrives as a right-button drag. The
+  paint modifier is Cmd on macOS, Ctrl elsewhere (see `LifeInput`).
 - `Scripts/LifeGlow.cs` — post-processing, zero wiring. Builds its own global
   Volume + VolumeProfile in code (priority 100, `HideAndDontSave` so it never
   dirties the scene) with Bloom/Tonemapping/ColorAdjustments/Vignette, and at

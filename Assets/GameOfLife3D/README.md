@@ -39,21 +39,28 @@ Press `G` to swap it for a glider gun or a 3D spaceship.
 | `G` | stamp the next known pattern (glider gun, spaceships) |
 | `[` / `]` | slower / faster |
 | **Left-drag** | **pan** |
-| **Right-drag** | **orbit** |
+| **`Shift` + left-drag** | **orbit** |
 | Two-finger / wheel scroll | zoom |
 | `F` | frame the volume |
-| `Cmd`/`Ctrl` + left-drag | paint cells into the volume |
-| `Cmd`/`Ctrl` + right-drag | erase cells |
-| Middle-drag | pan (three-button-mouse alias) |
+| `Cmd` + left-drag | paint cells into the volume |
+| `Cmd` + right-drag | erase cells |
+| Right-drag | orbit (mouse alias) |
+| Middle-drag | pan (mouse alias) |
 
 **The mouse navigates by default.** Bare drags move the camera; editing cells
 is the deliberate act and needs `Cmd` (or `Ctrl`) held. While that modifier is
 down the camera ignores the mouse completely, so a paint stroke never drags the
 view along with it.
 
-Everything is trackpad-reachable: pan and orbit are plain drags, zoom is a
-two-finger scroll (wheel notches and trackpad deltas are normalized to feel
-about the same). Middle-drag is an alias for three-button mice.
+Everything is trackpad-reachable. **Orbit is on `Shift` + drag rather than the
+right button** because a Mac trackpad cannot right-*drag*: a two-finger click
+is a right-click, but holding two fingers down and moving is the scroll
+gesture, so the drag never arrives. Right-drag and middle-drag are kept as
+aliases for anyone on an actual mouse.
+
+The paint modifier is `Cmd` on macOS and `Ctrl` elsewhere — deliberately not
+`Ctrl` on macOS, where `Ctrl`+click is a system right-click, so "Ctrl+drag to
+paint" would arrive as a right-drag and silently erase instead.
 
 A drag's meaning is fixed when the button goes down and held until release, so
 a modifier pressed mid-stroke can't flip you between pan and orbit halfway

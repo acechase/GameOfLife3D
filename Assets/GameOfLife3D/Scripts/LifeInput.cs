@@ -19,10 +19,23 @@ namespace GameOfLife3D
         static Keyboard Kb => Keyboard.current;
 #endif
 
+        /// <summary>Orbit modifier, so orbit is reachable without a right-drag.</summary>
+        public static bool Shift
+        {
+#if ENABLE_INPUT_SYSTEM
+            get { var k = Kb; return k != null && (k.leftShiftKey.isPressed || k.rightShiftKey.isPressed); }
+#else
+            get { return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift); }
+#endif
+        }
+
         /// <summary>
-        /// The "I mean to edit cells, not move the camera" modifier: Command on
-        /// macOS, Control elsewhere. Both are accepted on every platform so the
-        /// muscle memory travels.
+        /// The "I mean to edit cells, not move the camera" modifier.
+        ///
+        /// Command on macOS, Control elsewhere — and deliberately NOT Control on
+        /// macOS, where Ctrl+click is a system-level right-click: the OS would
+        /// deliver it as a right-button drag, so "Ctrl+drag to paint" would
+        /// silently erase instead.
         /// </summary>
         public static bool PaintModifier
         {
@@ -30,15 +43,24 @@ namespace GameOfLife3D
             get
             {
                 var k = Kb;
-                return k != null && (k.leftCommandKey.isPressed || k.rightCommandKey.isPressed
-                                  || k.leftCtrlKey.isPressed || k.rightCtrlKey.isPressed);
+                if (k == null) return false;
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
+                return k.leftCommandKey.isPressed || k.rightCommandKey.isPressed;
+#else
+                return k.leftCtrlKey.isPressed || k.rightCtrlKey.isPressed
+                    || k.leftCommandKey.isPressed || k.rightCommandKey.isPressed;
+#endif
             }
+#else
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
+            get { return Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand); }
 #else
             get
             {
-                return Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand)
-                    || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+                return Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)
+                    || Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand);
             }
+#endif
 #endif
         }
     }

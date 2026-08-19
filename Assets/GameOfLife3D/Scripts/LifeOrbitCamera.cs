@@ -10,11 +10,17 @@ namespace GameOfLife3D
     /// look at the thing while it runs. Put this on your camera; it finds the
     /// LifeVolume by itself.
     ///
-    ///   Left-drag          PAN            Right-drag        ORBIT
-    ///   Two-finger scroll  zoom           F                 frame the volume
-    ///   Middle-drag        pan (three-button-mouse alias)
+    ///   Left-drag          PAN            Shift + left-drag  ORBIT
+    ///   Two-finger scroll  zoom           F                  frame the volume
+    ///   Right-drag         orbit (mouse alias)
+    ///   Middle-drag        pan   (mouse alias)
     ///
-    /// Four bindings, no modifiers. Editing cells is the deliberate act and
+    /// Orbit is on Shift rather than the right button because a Mac trackpad
+    /// cannot right-DRAG: two-finger click is a right-click, but holding two
+    /// fingers down and moving is the scroll gesture, so the drag never
+    /// arrives. Right-drag is kept for anyone on an actual mouse.
+    ///
+    /// Editing cells is the deliberate act and
     /// lives behind <see cref="LifeInput.PaintModifier"/> (Cmd / Ctrl); a drag
     /// started with that held belongs to the brush and this component leaves it
     /// alone for its whole duration.
@@ -160,10 +166,10 @@ namespace GameOfLife3D
             {
                 if (LifeInput.PaintModifier)
                     _drag = DragMode.Brush;         // belongs to the brush, not us
-                else if (leftHeld || middleHeld)
+                else if (rightHeld || LifeInput.Shift)
+                    _drag = DragMode.Orbit;         // Shift, because a trackpad
+                else                                // cannot do a right-drag
                     _drag = DragMode.Pan;
-                else
-                    _drag = DragMode.Orbit;
             }
 
             if (_drag == DragMode.Pan) Pan(delta);
