@@ -8,7 +8,10 @@ namespace GameOfLife3D
     /// <summary>
     /// Game-view orbit / pan / zoom around the cell volume, so you can actually
     /// look at the thing while it runs. Put this on your camera; it finds the
-    /// LifeVolume by itself.
+    /// LifeVolume by itself. Dropped on the volume by mistake it drives
+    /// Camera.main instead and says so, rather than orbiting the volume around
+    /// itself — which looks like the background sweeping past a subject that
+    /// never moves.
     ///
     ///   Left-drag          PAN            Shift + left-drag  ORBIT
     ///   Two-finger scroll  zoom           F                  frame the volume
@@ -35,7 +38,10 @@ namespace GameOfLife3D
     /// stored as an offset *from the target*, so the view keeps tracking the
     /// volume even if it moves (XR grab) while preserving whatever pan you did.
     /// </summary>
-    [RequireComponent(typeof(Camera))]
+    // Deliberately NOT [RequireComponent(typeof(Camera))]: that quietly adds a
+    // second Camera to whatever you drop this on, and dropping it on the Life
+    // Volume then gives you two cameras fighting over the Game view while this
+    // component orbits the volume around itself. It finds the camera instead.
     [AddComponentMenu("GameOfLife3D/Life Orbit Camera")]
     [DisallowMultipleComponent]
     public class LifeOrbitCamera : MonoBehaviour
@@ -76,6 +82,7 @@ namespace GameOfLife3D
         DragMode _drag = DragMode.None;
 
         Camera _cam;
+        Transform _rig;          // the transform we actually move (the camera's)
         LifeVolume _volume;
 
         // Everything the user drives is a "want"; the bare fields chase it.
@@ -89,7 +96,6 @@ namespace GameOfLife3D
 
         void Awake()
         {
-            _cam = GetComponent<Camera>();
             if (target == null)
             {
                 _volume = FindFirstObjectByType<LifeVolume>();
@@ -99,13 +105,48 @@ namespace GameOfLife3D
             {
                 _volume = target.GetComponent<LifeVolume>();
             }
+
+            // Drive the camera on this object — unless this object is the thing
+            // we're supposed to be orbiting, in which case the camera we want is
+            // the main one. Orbiting a transform around itself just carries the
+            // subject along with the view: the background sweeps past but the
+            // volume never moves relative to you.
+            _cam = GetComponent<Camera>();
+            bool onTheVolume = target != null && target == transform;
+            if (_cam == null || onTheVolume)
+            {
+                if (onTheVolume && _cam != null)
+                    Debug.LogWarning(
+                        "LifeOrbitCamera is on the LifeVolume, which also has a Camera on it — " +
+                        "probably added automatically when this component was attached. Driving " +
+                        "Camera.main instead, but you should REMOVE the Camera component from " +
+                        $"'{name}': two enabled cameras both render the Game view.", this);
+                _cam = Camera.main;
+            }
+
+            _rig = _cam != null ? _cam.transform : null;
+
+            if (_rig == null)
+            {
+                Debug.LogError("LifeOrbitCamera: no camera to drive. Put this on your " +
+                               "camera, or tag one camera as MainCamera.", this);
+                enabled = false;
+            }
+            else if (_rig == target)
+            {
+                Debug.LogError("LifeOrbitCamera: the camera and the LifeVolume are the same " +
+                               "object, so there is nothing to orbit around. Move the " +
+                               "LifeVolume onto its own GameObject.", this);
+                enabled = false;
+            }
         }
 
         void Start()
         {
+            if (_rig == null) return;
             _wantYaw = _yaw = initialYaw;
             _wantPitch = _pitch = initialPitch;
-            _wantDistance = _distance = Vector3.Distance(transform.position, Pivot);
+            _wantDistance = _distance = Vector3.Distance(_rig.position, Pivot);
 
             if (frameOnStart) Frame();
             else ApplyTransform();
@@ -215,15 +256,16 @@ namespace GameOfLife3D
         /// </summary>
         void Pan(Vector2 delta)
         {
-            _wantOffset += (-transform.right * delta.x - transform.up * delta.y)
+            _wantOffset += (-_rig.right * delta.x - _rig.up * delta.y)
                            * (panSpeed * _distance);
         }
 
         void ApplyTransform()
         {
+            if (_rig == null) return;
             Quaternion rot = Quaternion.Euler(_pitch, _yaw, 0f);
-            transform.rotation = rot;
-            transform.position = Pivot - rot * Vector3.forward * _distance;
+            _rig.rotation = rot;
+            _rig.position = Pivot - rot * Vector3.forward * _distance;
         }
 
         float ClampDistance(float d) => Mathf.Clamp(d, minDistance, maxDistance);
@@ -235,7 +277,7 @@ namespace GameOfLife3D
         [ContextMenu("Frame Volume")]
         public void Frame()
         {
-            if (_cam == null) _cam = GetComponent<Camera>();
+            if (_cam == null) return;
 
             float radius = TargetRadius();
             float vHalf = _cam.fieldOfView * 0.5f * Mathf.Deg2Rad;

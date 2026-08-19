@@ -55,7 +55,12 @@ unavoidable.
   snaps the camera backwards. That was the cause of every "orbit feels glitchy"
   report; per-frame mode selection was a wrong first guess. Orbit deltas are
   also clamped to 90°/frame, since trackpads report accumulated movement.
-  Goes on the camera; finds the LifeVolume itself and frames it on Play. Drives
+  Goes on the **camera** (not the volume); finds the LifeVolume itself and
+  frames it on Play. It drives `_rig` — the found camera's transform — never
+  its own, and falls back to Camera.main with a warning if attached to the
+  volume. It carries no `[RequireComponent(typeof(Camera))]` on purpose: that
+  silently adds a second Camera to whatever it lands on, which is how you end
+  up with two cameras rendering the Game view and a "camera" orbiting itself. Drives
   pivot + spherical offset (no accumulated roll); pan is stored as an offset
   *from the target* so the view keeps tracking a volume that moves.
   **Bare left-drag pans and bare right-drag orbits — the mouse's primary job is
