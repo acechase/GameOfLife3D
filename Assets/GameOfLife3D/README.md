@@ -38,22 +38,33 @@ Press `G` to swap it for a glider gun or a 3D spaceship.
 | `T` | cycle rule preset |
 | `G` | stamp the next known pattern (glider gun, spaceships) |
 | `[` / `]` | slower / faster |
-| Left-drag | paint cells where the pointer ray enters the volume |
-| Right-drag | erase |
-| `Alt` + left-drag | orbit the camera |
-| `Shift` + left-drag | pan |
-| Middle-drag | pan (mouse alternative) |
-| `Alt` + right-drag | dolly in / out |
+| **Left-drag** | **pan** |
+| **Right-drag** | **orbit** |
 | Two-finger / wheel scroll | zoom |
 | `F` | frame the volume |
+| `Cmd`/`Ctrl` + left-drag | paint cells into the volume |
+| `Cmd`/`Ctrl` + right-drag | erase cells |
+| `Alt` + left-drag | orbit (Scene-view alias) |
+| `Alt` + right-drag | dolly in / out |
+| Middle-drag | pan (three-button-mouse alias) |
 
-Navigation lives on **LifeOrbitCamera** (add it to your camera). Holding `Alt`
-or `Shift` suppresses painting, so navigating never smears cells across the
-grid — the same modifier split the Scene view uses.
+**The mouse navigates by default.** Bare drags move the camera; editing cells
+is the deliberate act and needs `Cmd` (or `Ctrl`) held. While that modifier is
+down the camera ignores the mouse completely, so a paint stroke never drags the
+view along with it.
 
-All of it is trackpad-reachable: pan and orbit are modifier + drag, and zoom is
-a two-finger scroll (wheel notches and trackpad deltas are normalized to feel
-about the same). Middle-drag is there for three-button mice only.
+Everything primary is trackpad-reachable: pan and orbit are plain drags, zoom
+is a two-finger scroll (wheel notches and trackpad deltas are normalized to
+feel about the same). The `Alt` and middle-drag bindings are aliases for people
+with a three-button mouse and Unity muscle memory — you never need them.
+
+**About painting:** it spawns a noisy sphere of live cells where your cursor
+ray enters the volume — the desktop stand-in for reaching in with your hand in
+XR. Two things make it easy to miss: under `Pyroclastic` the volume is already
+~30% full of churning cells, so a fresh blob is visually lost in the noise, and
+under the Bays rules a painted blob dies within a few generations (those rules
+kill soup — see the rule notes above). Paint onto a cleared grid (`C`) to
+actually see what it does.
 
 **Make it glow:** the cell colors are HDR (young cyan peaks near `4.0`), so
 bloom does the aesthetic heavy lifting. **LifeGlow** handles all of it — no

@@ -10,12 +10,20 @@ namespace GameOfLife3D
     /// look at the thing while it runs. Put this on your camera; it finds the
     /// LifeVolume by itself.
     ///
+    ///   Left-drag          PAN            Right-drag        ORBIT
+    ///   Two-finger scroll  zoom           F                 frame the volume
     ///   Alt + left-drag    orbit          Alt + right-drag  dolly (zoom)
-    ///   Shift + left-drag  pan            Two-finger / wheel scroll  zoom
-    ///   Middle-drag        pan            F                 frame the volume
+    ///   Shift/middle-drag  pan
     ///
-    /// Shift-drag and middle-drag both pan: trackpads have no middle button, so
-    /// the modifier is the one that actually works on a laptop.
+    /// The bare mouse buttons navigate: that is the mouse's primary job here.
+    /// Editing cells is the deliberate act, and lives behind
+    /// <see cref="LifeInput.PaintModifier"/> (Cmd / Ctrl) — while that is held
+    /// this component ignores the mouse entirely, so a paint stroke never drags
+    /// the camera with it.
+    ///
+    /// The Alt aliases are kept because they match Unity's own Scene view, and
+    /// middle-drag because a three-button mouse expects it — but neither is
+    /// required, since a trackpad has neither a middle button nor a wheel.
     ///
     /// Alt-modified drags mirror the Scene view's navigation, and they keep the
     /// bare mouse buttons free for painting — <see cref="LifeDesktopControls"/>
@@ -112,7 +120,7 @@ namespace GameOfLife3D
         {
             Vector2 delta;
             float scroll;
-            bool alt, shift, leftHeld, rightHeld, middleHeld, framePressed;
+            bool leftHeld, rightHeld, middleHeld, framePressed;
 
 #if ENABLE_INPUT_SYSTEM
             Mouse mouse = Mouse.current;
@@ -124,8 +132,6 @@ namespace GameOfLife3D
             leftHeld = mouse.leftButton.isPressed;
             rightHeld = mouse.rightButton.isPressed;
             middleHeld = mouse.middleButton.isPressed;
-            alt = kb != null && (kb.leftAltKey.isPressed || kb.rightAltKey.isPressed);
-            shift = kb != null && (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed);
             framePressed = kb != null && kb.fKey.wasPressedThisFrame;
 #else
             delta = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y")) * 10f;
@@ -133,29 +139,33 @@ namespace GameOfLife3D
             leftHeld = Input.GetMouseButton(0);
             rightHeld = Input.GetMouseButton(1);
             middleHeld = Input.GetMouseButton(2);
-            alt = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
-            shift = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
             framePressed = Input.GetKeyDown(KeyCode.F);
 #endif
 
             if (framePressed) { Frame(); return; }
 
+            bool alt = LifeInput.Alt;
+
+            // Cmd/Ctrl means the drag belongs to the brush — hands off the camera.
+            if (LifeInput.PaintModifier)
+                leftHeld = rightHeld = middleHeld = false;
+
             if (alt && leftHeld)
             {
-                _wantYaw += delta.x * orbitSpeed;
-                _wantPitch = Mathf.Clamp(_wantPitch - delta.y * orbitSpeed, -maxPitch, maxPitch);
+                Orbit(delta);                       // Scene-view alias
             }
             else if (alt && rightHeld)
             {
                 // Horizontal drag dollies, matching the Scene view.
                 _wantDistance = ClampDistance(_wantDistance * Mathf.Exp(-delta.x * zoomSpeed * 0.02f));
             }
-            else if (middleHeld || (shift && leftHeld))
+            else if (leftHeld || middleHeld)
             {
-                // Pan in the view plane, scaled by distance so the volume keeps
-                // pace with the cursor at any zoom level.
-                _wantOffset += (-transform.right * delta.x - transform.up * delta.y)
-                               * (panSpeed * _distance);
+                Pan(delta);                         // the primary: plain click-drag
+            }
+            else if (rightHeld)
+            {
+                Orbit(delta);                       // the primary: plain right-drag
             }
 
             if (Mathf.Abs(scroll) > 0.01f)
@@ -166,6 +176,22 @@ namespace GameOfLife3D
                 notch = Mathf.Clamp(notch, -3f, 3f);
                 _wantDistance = ClampDistance(_wantDistance * Mathf.Exp(-notch * zoomSpeed));
             }
+        }
+
+        void Orbit(Vector2 delta)
+        {
+            _wantYaw += delta.x * orbitSpeed;
+            _wantPitch = Mathf.Clamp(_wantPitch - delta.y * orbitSpeed, -maxPitch, maxPitch);
+        }
+
+        /// <summary>
+        /// Pan in the view plane, scaled by distance so the volume keeps pace
+        /// with the cursor at any zoom level.
+        /// </summary>
+        void Pan(Vector2 delta)
+        {
+            _wantOffset += (-transform.right * delta.x - transform.up * delta.y)
+                           * (panSpeed * _distance);
         }
 
         void ApplyTransform()

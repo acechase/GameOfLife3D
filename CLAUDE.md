@@ -41,16 +41,20 @@ unavoidable.
 - `Scripts/LifePatterns.cs` — known-good starting configurations (Gosper gun,
   Conway glider/LWSS, the Bays5766 3D spaceship), each verified against the
   Python reference rather than copied from memory.
-- `Scripts/LifeDesktopControls.cs` — keyboard/mouse (Space/N/R/C/T, G to stamp
-  the next pattern, brackets for speed, LMB paint / RMB erase; skips painting
-  while Alt or Shift is held, since those belong to LifeOrbitCamera).
+- `Scripts/LifeDesktopControls.cs` — keyboard (Space/N/R/C/T, G to stamp the
+  next pattern, brackets for speed) + painting on **Cmd/Ctrl + drag only**.
+- `Scripts/LifeInput.cs` — one definition of Alt / Shift / PaintModifier,
+  shared by the camera and the brush. It exists because those two components
+  each tested the keys themselves and the definitions drifted, which let a drag
+  paint and navigate at once. Add a modifier here, not in a component.
 - `Scripts/LifeOrbitCamera.cs` — Game-view orbit/pan/zoom (Alt+left-drag orbit,
   Shift+left-drag or middle-drag pan, Alt+right-drag dolly, scroll, F to frame).
   Goes on the camera; finds the LifeVolume itself and frames it on Play. Drives
   pivot + spherical offset (no accumulated roll); pan is stored as an offset
   *from the target* so the view keeps tracking a volume that moves.
-  `LifeDesktopControls` suppresses painting while Alt **or Shift** is held so
-  the two never fight — keep those two guards in sync when adding a binding.
+  **Bare left-drag pans and bare right-drag orbits — the mouse's primary job is
+  navigation.** Painting is behind Cmd/Ctrl, and the camera ignores the mouse
+  entirely while that is held, so the two can't fight.
 - **Andrew is on a trackpad**: every navigation binding must be reachable
   without a middle mouse button or a wheel. Modifier+drag and two-finger
   scroll only; scroll input is normalized for wheel (~120/notch) vs trackpad.

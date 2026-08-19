@@ -306,6 +306,14 @@ namespace GameOfLife3D
             float meanScale = (transform.lossyScale.x + transform.lossyScale.y + transform.lossyScale.z) / 3f;
             float cellRadius = worldRadius / Mathf.Max(cellLocal * meanScale, 1e-6f);
 
+            // Keep the brush centre inside the grid. The caller offsets it along
+            // the view ray to sit under the surface, which in a thin grid (z = 1
+            // after stamping a 2D pattern) pushes it clean out the far side and
+            // paints nothing at all.
+            cell.x = Mathf.Clamp(cell.x, 0f, gridSize.x);
+            cell.y = Mathf.Clamp(cell.y, 0f, gridSize.y);
+            cell.z = Mathf.Clamp(cell.z, 0f, gridSize.z);
+
             SetGridUniforms();
             _cs.SetInt("_Seed", (int)(_seed + (uint)Time.frameCount)); // vary paint noise
             _cs.SetVector("_PaintCenter", cell);

@@ -13,11 +13,13 @@ namespace GameOfLife3D
     ///   R          reseed (new random)     C          clear all cells
     ///   T          cycle rule preset       G          cycle known patterns
     ///   [  /  ]    slower / faster
-    ///   Left-drag  paint cells             Right-drag erase cells
+    ///   Cmd/Ctrl + left-drag   paint cells
+    ///   Cmd/Ctrl + right-drag  erase cells
     ///
-    /// Painting casts a ray from the active camera through the pointer and
-    /// paints where the ray enters the volume. Holding Alt or Shift suppresses
-    /// painting entirely, leaving those drags to <see cref="LifeOrbitCamera"/>.
+    /// The bare mouse buttons navigate (see <see cref="LifeOrbitCamera"/>);
+    /// editing cells is deliberate and needs the modifier. Painting casts a ray
+    /// from the active camera through the pointer and spawns a noisy sphere of
+    /// cells where the ray enters the volume.
     /// </summary>
     public class LifeDesktopControls : MonoBehaviour
     {
@@ -53,14 +55,10 @@ namespace GameOfLife3D
                     volume.stepsPerSecond = Mathf.Min(60f, volume.stepsPerSecond * 1.5f);
             }
 
-            // Alt- and Shift-drags belong to LifeOrbitCamera; painting sits
-            // those out, or every attempt to look around would smear cells
-            // across the grid.
-            bool navigating = kb != null && (kb.leftAltKey.isPressed || kb.rightAltKey.isPressed
-                                          || kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed);
-
+            // The bare mouse buttons belong to LifeOrbitCamera. Editing cells
+            // is opt-in: hold Cmd (or Ctrl) and drag.
             var mouse = Mouse.current;
-            if (mouse != null && !navigating)
+            if (mouse != null && LifeInput.PaintModifier)
             {
                 bool paint = mouse.leftButton.isPressed;
                 bool erase = mouse.rightButton.isPressed;
@@ -79,9 +77,7 @@ namespace GameOfLife3D
             if (Input.GetKeyDown(KeyCode.RightBracket))
                 volume.stepsPerSecond = Mathf.Min(60f, volume.stepsPerSecond * 1.5f);
 
-            bool navigating = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)
-                           || Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
-            if (!navigating && (Input.GetMouseButton(0) || Input.GetMouseButton(1)))
+            if (LifeInput.PaintModifier && (Input.GetMouseButton(0) || Input.GetMouseButton(1)))
                 PaintAtPointer(Input.mousePosition, Input.GetMouseButton(1));
 #endif
         }
