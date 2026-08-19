@@ -74,6 +74,13 @@ unavoidable.
 - **Ctrl is not a usable modifier on macOS**: Ctrl+click is an OS-level
   right-click, so a "Ctrl+drag" binding arrives as a right-button drag. The
   paint modifier is Cmd on macOS, Ctrl elsewhere (see `LifeInput`).
+- `Scripts/LifeGround.cs` + `Resources/LifeGround.shader` — dim floor grid,
+  drawn with `Graphics.RenderMesh` (no scene objects, nothing to dirty).
+  It exists for **parallax**: orbiting centres the subject by definition, so
+  with a featureless background the move reads as the world spinning rather
+  than the camera travelling. Also states scale (squares = `minorSpacing` m).
+  Kept under 1.0 in HDR so bloom ignores it. `showGrid` must be OFF for
+  passthrough AR, same as `LifeGlow.darkBackground`.
 - `Scripts/LifeGlow.cs` — post-processing, zero wiring. Builds its own global
   Volume + VolumeProfile in code (priority 100, `HideAndDontSave` so it never
   dirties the scene) with Bloom/Tonemapping/ColorAdjustments/Vignette, and at

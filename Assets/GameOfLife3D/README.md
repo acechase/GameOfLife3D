@@ -19,7 +19,8 @@ Works in any Unity 6 URP project. Do this first to see it run; add XR after.
 2. Drop the `GameOfLife3D` folder anywhere under `Assets/`.
 3. In an empty scene: **GameObject → Create Empty**, name it `Life Volume`,
    position it at `(0, 1.2, 0.8)` so it hangs in front of the default camera.
-4. Add components: **LifeVolume**, **LifeDesktopControls**, and **LifeGlow**.
+4. Add components: **LifeVolume**, **LifeDesktopControls**, **LifeGlow**, and
+   **LifeGround**.
 5. Select your **Main Camera** → add **LifeOrbitCamera** (it finds the volume
    and frames it on Play).
 6. Press **Play**.
@@ -143,6 +144,15 @@ where SMAA isn't supported.
 - **Trail Brightness / Trail Scale** — how hot and how large a corpse stays as
   it fades. Keeping brightness under ~0.5 drops trails below the bloom
   threshold, so the living front glows and the trails read as dim ghosts.
+- **The ground grid** (`LifeGround`) is a navigation aid rather than
+  decoration. Orbiting keeps the subject centred by definition, so against a
+  featureless background nothing in frame changes except the volume's own
+  silhouette, and the move reads as the world spinning instead of you
+  travelling. Near grid lines sweep past faster than far ones, and that
+  parallax is what resolves it. It also states the scale: squares are **Minor
+  Spacing** metres (10 cm by default), so the 0.6 m volume becomes an object of
+  a definite size. **Turn Show Grid off for passthrough AR** — the real room
+  already supplies both cues, and the plane would paint over your actual floor.
 - **Wrap Edges** — torus topology; gliders that leave one face re-enter the
   opposite one.
 - **Idle Spin** — a few degrees/second makes it read as a sculpture.
@@ -212,11 +222,13 @@ GameOfLife3D/
 │   ├── LifeRules.cs           # rule presets & B/S mask parsing
 │   ├── LifeDesktopControls.cs # mouse/keyboard for desktop & simulator
 │   ├── LifeGlow.cs            # self-building bloom/grade volume + camera setup
+│   ├── LifeGround.cs          # floor reference grid (parallax + scale cue)
 │   ├── LifePatterns.cs        # verified gliders / guns / 3D spaceship
 │   ├── LifeOrbitCamera.cs     # Game-view orbit / pan / zoom / frame
 │   └── LifeXRWand.cs          # controller painting / pause / reseed
 └── Resources/
     ├── LifeCompute.compute    # seed / step / paint / compact kernels
+    ├── LifeGround.shader      # procedural antialiased grid, radial fade
     └── LifeCell.shader        # URP instanced cell shader (HDR, age gradient)
 ```
 
