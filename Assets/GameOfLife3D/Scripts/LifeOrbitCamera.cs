@@ -25,14 +25,10 @@ namespace GameOfLife3D
     /// started with that held belongs to the brush and this component leaves it
     /// alone for its whole duration.
     ///
-    /// A drag's meaning is latched when the button goes down and held until it
-    /// is released. Deciding per frame let a modifier arriving a frame late flip
-    /// pan and orbit mid-stroke, which cancel each other and feel like a dead,
-    /// glitchy zone rather than a camera move.
-    ///
-    /// Alt-modified drags mirror the Scene view's navigation, and they keep the
-    /// bare mouse buttons free for painting — <see cref="LifeDesktopControls"/>
-    /// deliberately skips painting while Alt is held, so the two never fight.
+    /// Pan vs orbit is live, so pressing Shift just after the button goes down
+    /// still gets you an orbit. Only *ownership* is latched: a drag begun as a
+    /// paint stroke stays the brush's until release, so releasing Cmd partway
+    /// through cannot hand a half-finished stroke to the camera.
     ///
     /// The camera is driven as pivot + spherical offset rather than by rotating
     /// the transform in place, so orbiting never accumulates roll. The pivot is
@@ -72,7 +68,10 @@ namespace GameOfLife3D
         public float initialYaw = 30f;
         public float initialPitch = 20f;
 
-        /// <summary>What a drag is doing, latched when the button goes down.</summary>
+        /// <summary>
+        /// What a drag is doing. Brush ownership is latched for the whole
+        /// stroke; pan-vs-orbit is re-decided each frame from Shift.
+        /// </summary>
         enum DragMode { None, Pan, Orbit, Brush }
         DragMode _drag = DragMode.None;
 
@@ -117,8 +116,17 @@ namespace GameOfLife3D
             ReadInput();
 
             // Critically-damped catch-up; with smoothing = 0 these are straight assignments.
-            _yaw = Mathf.SmoothDampAngle(_yaw, _wantYaw, ref _yawVel, smoothing);
-            _pitch = Mathf.SmoothDampAngle(_pitch, _wantPitch, ref _pitchVel, smoothing);
+            //
+            // Plain SmoothDamp, NOT SmoothDampAngle. SmoothDampAngle routes via
+            // Mathf.DeltaAngle, which takes the SHORTEST path around the circle:
+            // if a fast flick (or a frame hitch that dumps a big accumulated
+            // mouse delta into one frame) pushes the target more than 180° from
+            // where the camera currently is, the shortest path runs BACKWARDS
+            // and the view snaps the wrong way. _yaw is a plain unbounded scalar
+            // and _pitch is hard-clamped to +/-85, so neither needs wrapping and
+            // Quaternion.Euler is happy with yaw past 360.
+            _yaw = Mathf.SmoothDamp(_yaw, _wantYaw, ref _yawVel, smoothing);
+            _pitch = Mathf.SmoothDamp(_pitch, _wantPitch, ref _pitchVel, smoothing);
             _distance = Mathf.SmoothDamp(_distance, _wantDistance, ref _distVel, smoothing);
             _offset = Vector3.SmoothDamp(_offset, _wantOffset, ref _offsetVel, smoothing);
 
@@ -153,23 +161,25 @@ namespace GameOfLife3D
 
             if (framePressed) { Frame(); return; }
 
-            // The mode is decided once, when the button goes down, and held for
-            // the whole drag. Deciding it per frame meant a modifier registering
-            // a frame late — or flickering mid-drag — silently swapped pan and
-            // orbit, which partly cancel and feel like a glitchy dead zone.
             bool anyButton = leftHeld || rightHeld || middleHeld;
             if (!anyButton)
             {
                 _drag = DragMode.None;
             }
-            else if (_drag == DragMode.None)
+            else if (_drag == DragMode.None && LifeInput.PaintModifier)
             {
-                if (LifeInput.PaintModifier)
-                    _drag = DragMode.Brush;         // belongs to the brush, not us
-                else if (rightHeld || LifeInput.Shift)
-                    _drag = DragMode.Orbit;         // Shift, because a trackpad
-                else                                // cannot do a right-drag
-                    _drag = DragMode.Pan;
+                // Ownership is latched: a drag begun as a paint stroke stays the
+                // brush's for its whole duration, so letting go of Cmd partway
+                // through cannot hand a half-finished stroke to the camera.
+                _drag = DragMode.Brush;
+            }
+            else if (_drag != DragMode.Brush)
+            {
+                // Pan vs orbit, however, stays live. It is a harmless switch to
+                // make mid-drag, and latching it meant Shift pressed a moment
+                // after the button went down left you panning when you asked to
+                // orbit — which reads as the control being unreliable.
+                _drag = (rightHeld || LifeInput.Shift) ? DragMode.Orbit : DragMode.Pan;
             }
 
             if (_drag == DragMode.Pan) Pan(delta);
@@ -187,8 +197,16 @@ namespace GameOfLife3D
 
         void Orbit(Vector2 delta)
         {
-            _wantYaw += delta.x * orbitSpeed;
-            _wantPitch = Mathf.Clamp(_wantPitch - delta.y * orbitSpeed, -maxPitch, maxPitch);
+            // Trackpads report accumulated movement, so one hitched frame can
+            // deliver a delta worth hundreds of degrees. Cap it: a real drag
+            // never needs more than a quarter turn in a single frame, and
+            // without this the camera lurches on any frame-rate stutter.
+            float maxStep = 90f;
+            float yaw = Mathf.Clamp(delta.x * orbitSpeed, -maxStep, maxStep);
+            float pitch = Mathf.Clamp(delta.y * orbitSpeed, -maxStep, maxStep);
+
+            _wantYaw += yaw;
+            _wantPitch = Mathf.Clamp(_wantPitch - pitch, -maxPitch, maxPitch);
         }
 
         /// <summary>

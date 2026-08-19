@@ -48,10 +48,13 @@ unavoidable.
   each tested the keys themselves and the definitions drifted, which let a drag
   paint and navigate at once. Add a modifier here, not in a component.
 - `Scripts/LifeOrbitCamera.cs` — Game-view navigation: left-drag pan,
-  right-drag orbit, scroll zoom, F to frame (middle-drag pans as a mouse
-  alias). Drag mode is **latched at button-down**; evaluating it per frame let
-  a late modifier flip pan/orbit mid-stroke, which cancel and feel like a dead
-  zone. Don't reintroduce per-frame mode decisions.
+  Shift+left-drag orbit, scroll zoom, F to frame (right/middle-drag are
+  mouse-only aliases). **Use `Mathf.SmoothDamp`, never `SmoothDampAngle`, for
+  yaw/pitch**: SmoothDampAngle routes through DeltaAngle and takes the shortest
+  path, so a fast flick or a hitched frame that moves the target more than 180°
+  snaps the camera backwards. That was the cause of every "orbit feels glitchy"
+  report; per-frame mode selection was a wrong first guess. Orbit deltas are
+  also clamped to 90°/frame, since trackpads report accumulated movement.
   Goes on the camera; finds the LifeVolume itself and frames it on Play. Drives
   pivot + spherical offset (no accumulated roll); pan is stored as an offset
   *from the target* so the view keeps tracking a volume that moves.
