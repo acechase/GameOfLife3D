@@ -115,13 +115,25 @@ namespace GameOfLife3D
             bool onTheVolume = target != null && target == transform;
             if (_cam == null || onTheVolume)
             {
-                if (onTheVolume && _cam != null)
+                Camera main = Camera.main;
+
+                // A Camera sitting on the volume is almost certainly one Unity
+                // added automatically when this component was attached. Two
+                // enabled cameras both render the Game view, so switch the
+                // stray one off for this run rather than leaving a broken
+                // picture and a scolding. Runtime-only, so the saved scene is
+                // untouched and the change reverts when you stop.
+                if (onTheVolume && _cam != null && _cam != main)
+                {
+                    _cam.enabled = false;
                     Debug.LogWarning(
-                        "LifeOrbitCamera is on the LifeVolume, which also has a Camera on it — " +
-                        "probably added automatically when this component was attached. Driving " +
-                        "Camera.main instead, but you should REMOVE the Camera component from " +
-                        $"'{name}': two enabled cameras both render the Game view.", this);
-                _cam = Camera.main;
+                        $"LifeOrbitCamera: '{name}' had a spare Camera on it (Unity adds one when " +
+                        "this component is attached). Disabled it for this run and driving " +
+                        "Camera.main instead. To stop this message, remove the Camera component " +
+                        $"from '{name}' — the component itself can stay where it is.", this);
+                }
+
+                _cam = main;
             }
 
             _rig = _cam != null ? _cam.transform : null;
