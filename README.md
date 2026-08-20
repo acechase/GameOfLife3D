@@ -118,6 +118,10 @@ before the shader was written.
 - [ ] Quest 3 passthrough build
 - [ ] Multi-species colour inheritance; sound from population dynamics
 
+## License
+
+[MIT](LICENSE) — do what you like with it, keep the notice.
+
 ## Provenance
 
 Designed and built in collaboration with Claude. The step algorithm was
