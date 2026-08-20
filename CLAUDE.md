@@ -153,8 +153,12 @@ unavoidable.
    Bays4555, so it blooms hotter).
 2. OpenXR + XRI + XR Device Simulator setup (README §3 has the steps).
 3. ~~Glider/pattern injection~~ — done. `LifePatterns.cs` + `LifeVolume.
-   StampPattern` + `G` key. Each pattern carries the rule, edge mode and grid
-   shape it needs, and `Reshape()` reallocates buffers so flat patterns work.
+   StampPattern` + `G` key. Each pattern carries the rule, edge mode and the
+   exact grid it wants, and `Reshape()` reallocates buffers to match. Grid size
+   matters in BOTH directions and is measured, not guessed: the Gosper gun is
+   destroyed by its own boundary below 80x80, while a 10-cell spaceship in a
+   large grid renders as a speck, since the volume spans a fixed number of
+   metres however many cells subdivide it.
    Note: a 3520-trial search found NO spaceships under Pyroclastic or Coral
    (turbulent rules don't have them) and none under Bays4555 either; the one
    3D traveler we ship is a Bays5766 period-4 10-cell glider found by that

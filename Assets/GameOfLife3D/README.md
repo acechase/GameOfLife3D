@@ -120,7 +120,9 @@ where SMAA isn't supported.
     `"13-14"` / `"13-26"`. Rule-space safari: most rules die or explode;
     finding the living edge is the fun.
 - **Patterns** (`G`) — cycles through known configurations, each one clearing
-  the grid and switching to the rule, edge mode and grid shape it needs. This
+  the grid and switching to the rule, edge mode and grid size it needs — each
+  pattern stages its own playing field, since the gun needs room to survive
+  while a 10-cell spaceship needs a small grid to be visible at all. This
   is the only way to see structures *travel*, and the reason why is worth
   knowing: a search over 3520 random starting blobs found **no spaceships at
   all** under Pyroclastic or Coral. Rules that sustain a random soup are
@@ -129,9 +131,12 @@ where SMAA isn't supported.
   - `3D Spaceship (Bays 5766)` — 10 cells, period 4, drifting diagonally
     through the volume forever on a torus. A genuine 3D glider, found by
     search and verified over six full periods.
-  - `Gosper Glider Gun` — flattens to a slab and fires a glider every 30
-    generations, indefinitely. The clearest "things are being built and
-    launched" pattern there is.
+  - `Gosper Glider Gun` — flattens to a `96x96` slab and fires a glider every
+    30 generations, indefinitely. The clearest "things are being built and
+    launched" pattern there is. It needs that room: measured in the reference,
+    a `48x48` or `64x64` grid destroys the gun within ~150 generations, because
+    its own boundary sits too close and the debris walks back into the
+    mechanism.
   - `Glider` / `Lightweight Spaceship` — the 2D classics, in slab mode.
 - **States** (`LifeVolume → States`, 0 = use the rule's default) — the single
   biggest lever on whether a 3D rule stays alive. At `2` the automaton is plain

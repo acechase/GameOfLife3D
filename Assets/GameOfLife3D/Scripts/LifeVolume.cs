@@ -229,12 +229,17 @@ namespace GameOfLife3D
             rule = pattern.rule;
             wrapEdges = pattern.wrap;
 
-            // A 2D pattern only behaves as designed in a single-layer grid: in
-            // a 3D grid the 26-neighbor count is a completely different rule.
-            if (pattern.flat && gridSize.z != 1)
-                Reshape(new Vector3Int(gridSize.x, gridSize.y, 1));
-            else if (!pattern.flat && gridSize.z == 1)
-                Reshape(new Vector3Int(gridSize.x, gridSize.y, gridSize.x));
+            // Stage the grid the way this pattern needs it. A 2D pattern only
+            // behaves as designed in a single-layer grid — in a 3D grid the
+            // 26-neighbor count is a completely different rule — and patterns
+            // also care how much room they get, in both directions: the Gosper
+            // gun is destroyed by its own boundary in a small grid, while a
+            // 10-cell spaceship in a large one is a speck, since the volume
+            // spans the same metres no matter how many cells subdivide it.
+            Vector3Int want = pattern.grid.x > 0 ? pattern.grid : gridSize;
+            if (pattern.flat) want.z = 1;
+            else if (want.z == 1) want.z = want.x;
+            if (want != gridSize) Reshape(want);
 
             ApplyRule();
 

@@ -15,6 +15,16 @@ namespace GameOfLife3D
         /// <summary>Needs a single-layer grid (z = 1) to behave as designed.</summary>
         public bool flat;
         /// <summary>
+        /// Grid shape to stage this pattern in; zero keeps whatever is current.
+        ///
+        /// Patterns are fussy about room in both directions. The Gosper gun is
+        /// destroyed by its own boundary below 80x80 (measured — see the note
+        /// on it), while a 10-cell spaceship in a 96-cube renders as a speck,
+        /// since the volume always spans the same metres however many cells
+        /// are in it.
+        /// </summary>
+        public Vector3Int grid;
+        /// <summary>
         /// Torus edges. True for travelers, so they fly forever instead of
         /// dying against a wall; false for guns, whose own output would
         /// otherwise wrap around and crash back into them.
@@ -64,6 +74,7 @@ namespace GameOfLife3D
                 rule = RulePreset.Bays5766,
                 flat = false,
                 wrap = true,
+                grid = new Vector3Int(32, 32, 32),   // small, so 10 cells read large
                 note = "10 cells, period 4, travels (-1, 0, +1) — a genuine 3D glider.",
                 cells = V(
                     0,0,0,  0,0,1,  0,1,0,  0,1,1,
@@ -76,6 +87,12 @@ namespace GameOfLife3D
                 rule = RulePreset.Conway2D,
                 flat = true,
                 wrap = false,
+                // Measured in the Python reference: at 48^2 and 64^2 the gun is
+                // destroyed within ~150 generations, because its own boundary
+                // is too close and the debris walks back into the mechanism. At
+                // 80^2 and up it keeps emitting indefinitely. 96 leaves margin
+                // without shrinking the cells so far that the gun is hard to see.
+                grid = new Vector3Int(96, 96, 1),
                 note = "Emits a glider every 30 generations, forever. The clearest " +
                        "'things are being built and traveling' pattern there is.",
                 cells = Flat(
@@ -94,6 +111,7 @@ namespace GameOfLife3D
                 rule = RulePreset.Conway2D,
                 flat = true,
                 wrap = true,
+                grid = new Vector3Int(48, 48, 1),
                 note = "The original. 5 cells, period 4, travels diagonally forever.",
                 cells = Flat(1,0,  2,1,  0,2,  1,2,  2,2),
             },
@@ -103,6 +121,7 @@ namespace GameOfLife3D
                 rule = RulePreset.Conway2D,
                 flat = true,
                 wrap = true,
+                grid = new Vector3Int(48, 48, 1),
                 note = "Period 4, travels 2 cells straight along x.",
                 cells = Flat(0,1, 3,1, 4,2, 0,3, 4,3, 1,4, 2,4, 3,4, 4,4),
             },
