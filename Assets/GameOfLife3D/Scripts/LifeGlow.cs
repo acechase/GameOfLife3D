@@ -162,7 +162,13 @@ namespace GameOfLife3D
             if (data == null) return;
 
             data.renderPostProcessing = true;
-            data.antialiasing = antialiasing;
+            // SMAA is not supported in XR — URP silently gives you nothing
+            // rather than an error, so fall back to FXAA when the camera is
+            // tracked instead of leaving the edges raw.
+            bool xr = LifeXR.DrivesCamera(cam.transform);
+            data.antialiasing = (xr && antialiasing == AntialiasingMode.SubpixelMorphologicalAntiAliasing)
+                ? AntialiasingMode.FastApproximateAntialiasing
+                : antialiasing;
             data.antialiasingQuality = AntialiasingQuality.High;
             data.dithering = true;   // kills banding in the dark falloff around the volume
         }

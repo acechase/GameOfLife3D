@@ -166,39 +166,66 @@ where SMAA isn't supported.
   cells via one indirect instanced draw.
 - Population / rule readout is the overlay top-left (`Show Stats` to toggle).
 
-## 3. OpenXR + XR Device Simulator (headset-free XR)
+## 3. XR: simulator first, OpenXR when you have a headset
 
-Packages (Window → Package Manager):
+**Read this before enabling anything: OpenXR has no macOS runtime.** Unity's
+OpenXR plugin targets Windows, Linux and Android (which is how Quest builds
+work). On a Mac there is nothing for it to connect to, so switching it on for
+the Mac Standalone target gets you errors, not a headset. That does *not* block
+XR development, because the piece that matters on a Mac is the **XR Device
+Simulator**, which fakes the HMD and both controllers through the Input System
+and needs no runtime at all.
 
-- **XR Plugin Management** (`com.unity.xr.management`)
-- **OpenXR Plugin** (`com.unity.xr.openxr`)
-- **XR Interaction Toolkit** (`com.unity.xr.interaction.toolkit`, 3.x)
-  - In its **Samples** tab, import **Starter Assets** and **XR Device Simulator**.
+So the order is: build and test the interactions against the simulator on the
+desktop, and enable OpenXR only when you switch the build target to Android for
+a Quest build (§4).
 
-Setup:
+The packages are already in `Packages/manifest.json` — XR Interaction Toolkit
+and the OpenXR plugin install themselves when Unity next has focus. Nothing to
+click in Package Manager for those.
 
-1. **Edit → Project Settings → XR Plug-in Management**: enable **OpenXR** for
-   your desktop platform. Under OpenXR settings, add an interaction profile
-   you'll eventually target (e.g. *Oculus Touch Controller Profile*).
-2. Delete the scene's plain Main Camera. Drag in the
-   **XR Origin (XR Rig)** prefab from the Starter Assets sample, position it
-   ~1.5 m back from the Life Volume. Make sure its camera is tagged
-   **MainCamera** (mouse painting uses `Camera.main`).
-3. Drag in the **XR Device Simulator** prefab from its sample.
-4. Press Play — the simulator's on-screen help shows how to drive the HMD and
-   controllers with mouse/keyboard.
+### 3a. Import the two samples
 
-**XR wand (paint with the controller):** add **LifeXRWand** to the rig's
-*Right Controller* GameObject. Either assign its four actions from the XRI
-default input actions asset (Activate/trigger for paint is a good fit), or
-right-click the component header → **Use Default XR Bindings** for
-ready-made trigger/grip/button bindings.
+Samples cannot be declared in the manifest, so this part is manual:
 
-**Grab & scale the colony:** on the `Life Volume` object, right-click the
-LifeVolume component header → **Fit Box Collider For XR Grab** (adds a fitted
-trigger collider), then add **XR Grab Interactable** (add a Rigidbody with
-**Is Kinematic** on, gravity off). Grab it, turn it, throw it gently across the
-room. XRI's default setup gives two-hand rotate/scale if you enable it.
+1. **Window → Package Manager → XR Interaction Toolkit → Samples** tab.
+2. Import **Starter Assets** (the input actions and the rig prefab).
+3. Import **XR Device Simulator**.
+
+### 3b. Swap the camera for a rig
+
+1. Delete the scene's plain **Main Camera**.
+2. From `Assets/Samples/XR Interaction Toolkit/<version>/Starter Assets/Prefabs`,
+   drag **XR Origin (XR Rig)** into the scene, about 1.5 m back from the Life
+   Volume.
+3. Confirm its camera is tagged **MainCamera** — `LifeGlow` configures
+   `Camera.main`, and painting rays are cast from it.
+4. Drag in the **XR Device Simulator** prefab from its sample folder.
+5. Press **Play**. The simulator's on-screen legend shows how to drive the head
+   and hands from the keyboard and mouse.
+
+`LifeOrbitCamera` detects that the camera is now driven by a tracked pose and
+stands itself down, logging one line to say so — mouse navigation and head
+tracking would otherwise write to the same transform every frame and fight.
+You can leave the component on the object. `LifeGlow` likewise switches SMAA to
+FXAA, since SMAA is unsupported in XR and URP silently drops it rather than
+warning.
+
+### 3c. Paint with a controller
+
+Add **LifeXRWand** to the rig's *Right Controller* object. Either assign its
+four actions from the XRI default input actions asset (Activate/trigger suits
+painting), or right-click the component header → **Use Default XR Bindings**
+for ready-made trigger/grip/button bindings.
+
+### 3d. Grab the colony
+
+On `Life Volume`, right-click the LifeVolume component header → **Fit Box
+Collider For XR Grab**, which adds a fitted trigger collider. Then add **XR
+Grab Interactable** plus a Rigidbody with **Is Kinematic** on and gravity off.
+Grab it, turn it, set it down somewhere else. The view keeps tracking it:
+`LifeOrbitCamera` stores its pan as an offset *from* the volume rather than as
+an absolute point, for exactly this reason.
 
 ## 4. Later: passthrough AR on a headset (e.g. Quest 3)
 

@@ -151,6 +151,16 @@ namespace GameOfLife3D
                                "LifeVolume onto its own GameObject.", this);
                 enabled = false;
             }
+            else if (LifeXR.DrivesCamera(_rig))
+            {
+                // In XR the headset owns the camera pose. Writing to it as well
+                // would fight the tracking every frame, which reads as jitter
+                // rather than as two systems disagreeing.
+                Debug.Log("LifeOrbitCamera: the camera is driven by a tracked device, " +
+                          "so mouse navigation is standing down. Move the XR rig to move " +
+                          "the view.", this);
+                enabled = false;
+            }
         }
 
         void Start()
