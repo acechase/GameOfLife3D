@@ -9,17 +9,21 @@ inline from a repo path; it does *not* reliably play `.mp4` referenced that way
 an issue or PR, which produces a URL that lives outside this repo. So GIF is
 the format that survives a clone.
 
-Keep each one **under about 5 MB**. Raw captures (`.mov`, `.mp4`) are ignored by
-git — convert, commit the GIF, leave the source out.
+Aim for **5-6 MB each**. That is looser than it sounds: almost every pixel
+changes every frame here, so there is very little for GIF's inter-frame
+compression to exploit and the format's usual size rules do not apply. Six
+seconds at 640px/12fps lands around 6 MB for a full-frame shot and around 4 MB
+for a mostly-dark one. Raw captures (`.mov`, `.mp4`) are ignored by git —
+convert, commit the GIF, leave the source out.
 
 ## Shot list
 
 | File | Shows | Notes |
 |---|---|---|
-| `pyroclastic.gif` | the default rule churning, slow orbit | the money shot — bloom, trails, fronts |
-| `glider-gun.gif` | `G` to the Gosper gun, gliders streaming away | the clearest "things are built and travel" |
-| `spaceship-3d.gif` | the Bays5766 traveller crossing the volume | zoom in; it is only 10 cells |
-| `navigation.gif` | pan, orbit, zoom over the ground grid | shows the parallax the grid exists for |
+| `pyroclastic.gif` | the default rule churning, then a fly-in | ✅ recorded |
+| `glider-gun.gif` | the Gosper gun firing in slab mode | ✅ recorded |
+| `clouds.gif` | the Clouds rule's dense magenta mass | ✅ recorded |
+| `spaceship-3d.gif` | the Bays5766 traveller crossing the volume | still wanted — zoom in, it is only 10 cells |
 
 ## Capturing
 
@@ -48,13 +52,16 @@ Two-pass palette generation — a generated palette matters a lot here, because
 the default 256-colour quantiser wrecks the bloom gradients into visible bands:
 
 ```sh
-ffmpeg -i input.mov \
-  -vf "fps=18,scale=800:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer:bayer_scale=3" \
+ffmpeg -ss 0 -t 6 -i Recordings/Movie_001.mp4 \
+  -vf "fps=12,scale=640:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=96[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5" \
   -loop 0 docs/media/output.gif
 ```
 
-Trim before converting rather than after — `-ss 00:00:02 -t 8` after `-i` takes
-8 seconds starting at 2s.
+`-ss` is the start offset and `-t` the length, both in seconds, and both belong
+*before* `-i` so ffmpeg seeks rather than decoding and discarding.
 
-If a file lands over 5 MB, in order of least visible damage: drop `fps` to 15,
-then `scale` to 640, then `max_colors` to 96.
+To shrink a file, in order of least visible damage: shorten it, then drop `fps`,
+then `scale`. Measured on this footage, `fps` and resolution dominate; the
+dither mode barely matters (bayer vs none differed by under 20%) because the
+content is already noise-like, and `max_colors` below ~96 starts banding the
+bloom gradients without saving much.

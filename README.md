@@ -7,12 +7,25 @@ your hands in passthrough AR.
 
 Built AR-first for OpenXR, but everything works on the desktop today.
 
+![Pyroclastic rule running in a 48x48x48 volume](docs/media/pyroclastic.gif)
+
+*The default `Pyroclastic` rule: ~7% of cells alive, fading refractory trails
+behind the living fronts, bloom doing the glow. The floor grid is a parallax
+reference so orbiting reads as movement.*
+
 ```
 Assets/GameOfLife3D/          ← all project code lives here
 ├── Scripts/                  ← one self-wiring component per concern
 ├── Resources/                ← compute + shaders, loaded by name
 └── Validation~/              ← headless Python mirror of the step rule
 ```
+
+## More of it running
+
+| | |
+|---|---|
+| ![Gosper glider gun in a single-layer slab](docs/media/glider-gun.gif) | **Gosper glider gun.** `Conway2D` in a `48x48x1` slab — press `G` and the grid flattens itself. Gliders stream away from the gun until they reach the boundary. |
+| ![Clouds rule](docs/media/clouds.gif) | **`Clouds`** (S13-26/B13-14), a much denser rule that blooms hot. Knife-edge: it collapses shortly after this clip ends, which is why `Pyroclastic` is the default. |
 
 ## Requirements
 
