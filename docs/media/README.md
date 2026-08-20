@@ -23,7 +23,8 @@ convert, commit the GIF, leave the source out.
 | `pyroclastic.gif` | the default rule churning, then a fly-in | ✅ recorded |
 | `glider-gun.gif` | the Gosper gun firing in slab mode | ✅ recorded |
 | `clouds.gif` | the Clouds rule's dense magenta mass | ✅ recorded |
-| `spaceship-3d.gif` | the Bays5766 traveller crossing the volume | still wanted — zoom in, it is only 10 cells |
+| `lightweight-spaceship.gif` | the 2D LWSS crossing the slab | ✅ recorded |
+| `spaceship-3d.gif` | the Bays5766 traveller crossing the volume | still wanted — it is `G` preset **0**, and needs a 3D grid, not the slab |
 
 ## Capturing
 

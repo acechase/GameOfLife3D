@@ -26,6 +26,7 @@ Assets/GameOfLife3D/          ← all project code lives here
 |---|---|
 | ![Gosper glider gun in a single-layer slab](docs/media/glider-gun.gif) | **Gosper glider gun.** `Conway2D` in a `48x48x1` slab — press `G` and the grid flattens itself. Gliders stream away from the gun until they reach the boundary. |
 | ![Clouds rule](docs/media/clouds.gif) | **`Clouds`** (S13-26/B13-14), a much denser rule that blooms hot. Knife-edge: it collapses shortly after this clip ends, which is why `Pyroclastic` is the default. |
+| ![Lightweight spaceship crossing the slab](docs/media/lightweight-spaceship.gif) | **Lightweight spaceship.** Nine cells, period 4, travelling two cells along x every period — placed by `G`, not grown. Rules that survive random soup have no travellers; see below. |
 
 ## Requirements
 
