@@ -63,3 +63,11 @@ crashlytics-build.properties
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Raw screen captures — convert to an optimised GIF in docs/media and commit
+# that instead. Video does not render inline from a repo path on GitHub, and
+# raw captures are large enough to bloat the history permanently.
+*.mov
+*.mp4
+*.webm
+!docs/media/*.gif
