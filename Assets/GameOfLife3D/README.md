@@ -63,10 +63,10 @@ The paint modifier is `Cmd` on macOS and `Ctrl` elsewhere — deliberately not
 `Ctrl` on macOS, where `Ctrl`+click is a system right-click, so "Ctrl+drag to
 paint" would arrive as a right-drag and silently erase instead.
 
-A drag's meaning is fixed when the button goes down and held until release, so
-a modifier pressed mid-stroke can't flip you between pan and orbit halfway
-through — that flipping is what made the old `Alt` bindings feel glitchy and
-unresponsive, since the two moves partly cancel.
+Pan and orbit switch live, so pressing `Shift` a moment after you start
+dragging still gets you an orbit. Only *ownership* is fixed at button-down:
+a drag begun as a paint stroke stays the brush's until you release, so letting
+go of `Cmd` partway through can't hand a half-finished stroke to the camera.
 
 **About painting:** it spawns a noisy sphere of live cells where your cursor
 ray enters the volume — the desktop stand-in for reaching in with your hand in
