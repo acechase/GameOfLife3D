@@ -269,6 +269,7 @@ GameObject:
   - component: {fileID: 381007368}
   - component: {fileID: 381007371}
   - component: {fileID: 381007373}
+  - component: {fileID: 381007374}
   m_Layer: 0
   m_Name: Life Volume
   m_TagString: Untagged
@@ -389,6 +390,26 @@ MonoBehaviour:
   maxPitch: 85
   initialYaw: 30
   initialPitch: 20
+--- !u!114 &381007374
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 381007367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac687227ba6b646999b050eb4f6c7884, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameOfLife3D.LifeGround
+  showGrid: 1
+  opacity: 0.5
+  lineColor: {r: 0.3, g: 0.55, b: 0.62, a: 1}
+  minorSpacing: 0.1
+  majorEvery: 10
+  lineWidth: 1.1
+  fadeRadius: 3
+  clearance: 0.15
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
