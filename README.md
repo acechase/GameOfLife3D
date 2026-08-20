@@ -24,9 +24,19 @@ Assets/GameOfLife3D/          ← all project code lives here
 
 | | |
 |---|---|
-| ![Gosper glider gun in a single-layer slab](docs/media/glider-gun.gif) | **Gosper glider gun.** `Conway2D` in a `48x48x1` slab — press `G` and the grid flattens itself. Gliders stream away from the gun until they reach the boundary. |
-| ![Clouds rule](docs/media/clouds.gif) | **`Clouds`** (S13-26/B13-14), a much denser rule that blooms hot. Knife-edge: it collapses shortly after this clip ends, which is why `Pyroclastic` is the default. |
-| ![Lightweight spaceship crossing the slab](docs/media/lightweight-spaceship.gif) | **Lightweight spaceship.** Nine cells, period 4, travelling two cells along x every period — placed by `G`, not grown. Rules that survive random soup have no travellers; see below. |
+| ![Gosper glider gun firing on a 96x96 slab](docs/media/glider-gun.gif) | **Gosper glider gun.** `G` flattens the grid to a `96x96` slab and stamps it; from then on it emits a glider every 30 generations, indefinitely. It needs that room — at `48x48` the gun's own debris reaches the boundary and walks back into the mechanism, killing it inside 150 generations. |
+| ![A ten-cell spaceship travelling through a 32-cube](docs/media/spaceship-3d.gif) | **A genuine 3D spaceship.** Ten cells under `Bays5766`, period 4, translating `(-1, 0, +1)` forever on a torus. This is the rarest thing in the project: it came out of a search over 3520 random starting blobs, and was verified over six full periods before being shipped. |
+| ![The Coral rule settling into a dense mass](docs/media/coral.gif) | **`Coral`** (S5-8/B6-7, 4 states) — the other rule that genuinely sustains. Denser and slower than Pyroclastic, settling around 25% alive and doing its work at the surface of the mass. |
+
+<details>
+<summary>Two more, including a rule that doesn't work</summary>
+
+| | |
+|---|---|
+| ![Clouds rule](docs/media/clouds.gif) | **`Clouds`** (S13-26/B13-14) blooms hot and looks great, and then dies: it drops from 15,000 cells to under 900 within seconds of this clip. Below ~0.65 seed density it goes extinct, above it freezes into a solid block. It is kept as a rule-safari curiosity, not a showcase. |
+| ![Lightweight spaceship crossing the slab](docs/media/lightweight-spaceship.gif) | **Lightweight spaceship**, the 2D classic, in slab mode — nine cells, period 4, two cells along x per period. |
+
+</details>
 
 ## Requirements
 

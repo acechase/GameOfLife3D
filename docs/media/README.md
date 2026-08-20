@@ -24,7 +24,17 @@ convert, commit the GIF, leave the source out.
 | `glider-gun.gif` | the Gosper gun firing in slab mode | ✅ recorded |
 | `clouds.gif` | the Clouds rule's dense magenta mass | ✅ recorded |
 | `lightweight-spaceship.gif` | the 2D LWSS crossing the slab | ✅ recorded |
-| `spaceship-3d.gif` | the Bays5766 traveller crossing the volume | still wanted — it is `G` preset **0**, and needs a 3D grid, not the slab |
+| `spaceship-3d.gif` | the Bays5766 traveller crossing a 32-cube | ✅ recorded |
+| `coral.gif` | the Coral rule's dense sustaining mass | ✅ recorded |
+
+The first three are featured in the root README; `clouds` and
+`lightweight-spaceship` sit in a collapsed section, so the front page does not
+load every one of them at once.
+
+A long take that T-cycles through the rules is a useful thing to record, but a
+poor thing to embed: cut the one rule you want out of it rather than shipping
+the whole tour. `Movie_008` held Coral, Bays4555, Bays5766, Clouds, Conway2D
+and Pyroclastic across 46 seconds; only the Coral segment was worth a GIF.
 
 ## Capturing
 
