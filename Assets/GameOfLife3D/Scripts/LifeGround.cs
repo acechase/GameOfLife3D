@@ -42,13 +42,28 @@ namespace GameOfLife3D
         public float lineWidth = 1.1f;
         [Tooltip("Metres from the centre at which the grid fades out entirely.")]
         public float fadeRadius = 3f;
-        [Tooltip("Extra drop below the volume's underside, in metres.")]
+        [Tooltip("Extra drop below the volume's underside, in metres. Only used when " +
+                 "Use World Floor is off.")]
         public float clearance = 0.15f;
+        [Tooltip("Put the grid at world y = 0 — an actual floor. Off tucks it just under " +
+                 "the volume, which is a desktop framing choice: in a headset that lands " +
+                 "around thigh height and reads as a sheet of glass rather than the ground.")]
+        public bool useWorldFloor = true;
+
+        [Header("Physics")]
+        [Tooltip("Invisible floor collider matching the grid, so an XR rig with gravity has " +
+                 "something to stand on. Without one the rig falls forever and the volume " +
+                 "appears to fly away from you.")]
+        public bool physicalFloor = true;
+        [Tooltip("Side length of that collider, in metres. Generous on purpose — walking off " +
+                 "the edge means falling out of the world.")]
+        public float floorSize = 60f;
 
         Material _material;
         Mesh _quad;
         MaterialPropertyBlock _mpb;
         LifeVolume _volume;
+        GameObject _floor;
 
         void OnEnable()
         {
@@ -66,13 +81,15 @@ namespace GameOfLife3D
             _material = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
             _quad = BuildQuad();
             _mpb = new MaterialPropertyBlock();
+            BuildFloor();
         }
 
         void OnDisable()
         {
             if (_material != null) DestroySafely(_material);
             if (_quad != null) DestroySafely(_quad);
-            _material = null; _quad = null; _mpb = null;
+            if (_floor != null) DestroySafely(_floor);
+            _material = null; _quad = null; _mpb = null; _floor = null;
         }
 
         static void DestroySafely(Object o)
@@ -82,9 +99,11 @@ namespace GameOfLife3D
 
         void LateUpdate()
         {
+            Vector3 centre = GroundCentre();
+            UpdateFloor(centre);
+
             if (!showGrid || _material == null || _quad == null) return;
 
-            Vector3 centre = GroundCentre();
             float span = fadeRadius * 2.2f;   // past the fade, so the rim is never reached
 
             _mpb.SetColor("_LineColor", lineColor);
@@ -107,19 +126,59 @@ namespace GameOfLife3D
                 Matrix4x4.TRS(centre, Quaternion.identity, new Vector3(span, 1f, span)));
         }
 
-        /// <summary>Directly under the volume, just below its lowest cell.</summary>
+        /// <summary>
+        /// Where the ground sits: at the world floor, or tucked under the
+        /// volume's lowest cell.
+        /// </summary>
         Vector3 GroundCentre()
         {
-            Vector3 p = transform.position;
+            Vector3 p = _volume != null ? _volume.transform.position : transform.position;
+
+            if (useWorldFloor)
+            {
+                // Centred under the volume, but at the height the player's feet
+                // actually are. An XR rig stands at y = 0; a plane tucked under
+                // a volume floating at 1.2 m would be above the rig's head-start
+                // position, so it could never be stood on.
+                p.y = 0f;
+                return p;
+            }
+
             if (_volume != null)
             {
-                p = _volume.transform.position;
                 float halfHeight = _volume.gridSize.y * 0.5f * _volume.CellSizeLocal
                                  * Mathf.Abs(_volume.transform.lossyScale.y);
                 p.y -= halfHeight;
             }
             p.y -= clearance;
             return p;
+        }
+
+        void BuildFloor()
+        {
+            if (!physicalFloor || _floor != null) return;
+
+            _floor = new GameObject("Life Ground Floor") { layer = 0 };
+            _floor.hideFlags = HideFlags.HideAndDontSave;
+            var box = _floor.AddComponent<BoxCollider>();
+            box.size = new Vector3(floorSize, 0.2f, floorSize);
+        }
+
+        /// <summary>Keep the collider's top surface level with the drawn grid.</summary>
+        void UpdateFloor(Vector3 centre)
+        {
+            if (!physicalFloor)
+            {
+                if (_floor != null) { DestroySafely(_floor); _floor = null; }
+                return;
+            }
+
+            if (_floor == null) BuildFloor();
+            if (_floor == null) return;
+
+            var box = _floor.GetComponent<BoxCollider>();
+            if (box != null) box.size = new Vector3(floorSize, 0.2f, floorSize);
+            _floor.transform.position = centre - new Vector3(0f, 0.1f, 0f);
         }
 
         /// <summary>Unit quad in the XZ plane, facing up.</summary>

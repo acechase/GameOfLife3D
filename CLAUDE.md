@@ -81,6 +81,12 @@ unavoidable.
   than the camera travelling. Also states scale (squares = `minorSpacing` m).
   Kept under 1.0 in HDR so bloom ignores it. `showGrid` must be OFF for
   passthrough AR, same as `LifeGlow.darkBackground`.
+  Also owns the only floor collider in the scene (`physicalFloor`): the XRI rig
+  has a CharacterController + GravityProvider and nothing else in the scene has
+  a collider, so without it the rig falls forever and the volume looks like it
+  is flying away. `useWorldFloor` puts the plane at y=0 rather than under the
+  volume — a grid tucked under a volume floating at 1.2m sits ABOVE a standing
+  rig's feet, so it could never be stood on.
 - `Scripts/LifeGlow.cs` — post-processing, zero wiring. Builds its own global
   Volume + VolumeProfile in code (priority 100, `HideAndDontSave` so it never
   dirties the scene) with Bloom/Tonemapping/ColorAdjustments/Vignette, and at

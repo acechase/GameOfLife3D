@@ -204,6 +204,18 @@ Samples cannot be declared in the manifest, so this part is manual:
 5. Press **Play**. The simulator's on-screen legend shows how to drive the head
    and hands from the keyboard and mouse.
 
+**If the volume flies away from you the moment you press Play, you are the one
+moving.** The Starter Assets rig has a `CharacterController` and a
+`GravityProvider`, and this scene has no other colliders in it — the ground grid
+is drawn with `Graphics.RenderMesh` and is pure visuals. With nothing to stand
+on the rig falls forever, and the volume appears to recede into the sky.
+`LifeGround` handles this: **Physical Floor** adds an invisible collider matching
+the grid, and **Use World Floor** puts that grid at `y = 0` instead of tucked
+under the volume. Both are on by default. The second matters as much as the
+first — the volume floats at 1.2 m, so a grid tucked beneath it sits at about
+0.75 m, which is *above* where a standing rig starts, and a floor you begin
+underneath is no floor at all.
+
 `LifeOrbitCamera` detects that the camera is now driven by a tracked pose and
 stands itself down, logging one line to say so — mouse navigation and head
 tracking would otherwise write to the same transform every frame and fight.
